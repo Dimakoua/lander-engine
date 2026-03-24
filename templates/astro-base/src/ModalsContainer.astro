@@ -86,6 +86,24 @@ const getContentStyle = (popupId: string): string => {
   })}
 </div>
 
+<script is:inline>
+  // Clicking outside modal content closes the modal (click-away behavior)
+  document.addEventListener('click', (e) => {
+    const modal = e.target.closest('.lander-modal');
+    if (!modal) return;
+
+    const content = modal.querySelector('.lander-modal-content');
+    if (content && content.contains(e.target)) {
+      return; // click inside modal content does not close
+    }
+
+    const closeOnBackdrop = modal.dataset.closeOnBackdrop !== 'false';
+    if (!closeOnBackdrop) return;
+
+    modal.classList.add('modal-hidden');
+  });
+</script>
+
 <style define:vars={{ duration: `${modalConfigs?.['secondary']?.animationDuration || 300}ms` }}>
   #lander-modals-container {
     display: contents;
