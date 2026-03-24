@@ -32,12 +32,28 @@ export interface LayoutConfig {
   }>;
 }
 
+export interface ModalConfig {
+  backgroundColor?: string;
+  backdropColor?: string; // overlay color
+  backdropOpacity?: number; // 0-1
+  borderRadius?: string;
+  maxWidth?: string;
+  width?: string;
+  maxHeight?: string;
+  padding?: string;
+  boxShadow?: string;
+  closeOnBackdropClick?: boolean;
+  animation?: 'fade' | 'scale' | 'slide' | 'none';
+  animationDuration?: number; // ms
+}
+
 export interface FlowConfig {
   initialStep: string;
   steps: Record<string, {
     type: 'normal' | 'popup';
     next?: string;
   }>;
+  modals?: Record<string, ModalConfig>;
 }
 
 export interface StepSection {

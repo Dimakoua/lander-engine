@@ -134,6 +134,32 @@ export class ActionDispatcher {
           navigator.clipboard.writeText(params.text);
         }
         break;
+      case 'openPopup': {
+        const popupId = params?.popupId;
+        if (!popupId) {
+          console.warn('openPopup requires popupId in params');
+          return;
+        }
+        const modal = document.getElementById(`modal-${popupId}`);
+        if (modal) {
+          modal.classList.remove('modal-hidden');
+        } else {
+          console.warn(`Modal with id 'modal-${popupId}' not found`);
+        }
+        break;
+      }
+      case 'closePopup': {
+        const popupId = params?.popupId;
+        if (!popupId) {
+          console.warn('closePopup requires popupId in params');
+          return;
+        }
+        const modal = document.getElementById(`modal-${popupId}`);
+        if (modal) {
+          modal.classList.add('modal-hidden');
+        }
+        break;
+      }
       case 'goToNextStep': {
         const nextStep = params?.next;
         let targetPath = '/';
