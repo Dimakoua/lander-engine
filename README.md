@@ -63,6 +63,94 @@ export default {
 
 ---
 
+## Full Example: "Campaign Alpha"
+
+Here is how a real campaign is structured in your `json_configs/` directory.
+
+### 1. `campaign_alpha/flow.json`
+Defines the steps and routing.
+```json
+{
+  "initialStep": "main",
+  "steps": {
+    "main": { "type": "normal", "next": "checkout" },
+    "checkout": { "type": "normal", "next": "thanks" },
+    "thanks": { "type": "normal" }
+  }
+}
+```
+
+### 2. `campaign_alpha/theme.json`
+Defines design tokens used across the campaign.
+```json
+{
+  "colors": {
+    "primary": "#3b82f6",
+    "secondary": "#1e293b",
+    "background": "#ffffff",
+    "text": "#000000"
+  },
+  "tokens": {
+    "buttonRadius": "8px"
+  }
+}
+```
+
+### 3. `campaign_alpha/steps/main.json`
+Defines the layout and components for the 'main' step.
+```json
+{
+  "sections": [
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Build Better Landing Pages",
+        "subtitle": "Configuration-driven, performant, and flexible.",
+        "ctaText": "Get Started Now",
+        "onCtaClick": [
+          {
+            "type": "navigation",
+            "payload": { "to": "checkout", "type": "step" }
+          }
+        ]
+      }
+    },
+    {
+      "component": "FeatureList",
+      "props": {
+        "items": ["Zero-JS", "Cascading Overrides", "View Transitions"]
+      }
+    }
+  ],
+  "seo": {
+    "title": "Campaign Alpha | Welcome"
+  }
+}
+```
+
+### 4. `components/Hero.tsx`
+A simple React component used in the JSON above.
+```tsx
+import { dispatcher } from 'lander-engine/core';
+
+export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
+  return (
+    <section className="bg-[var(--color-background)] p-10 text-center">
+      <h1 className="text-4xl font-bold text-[var(--color-primary)]">{title}</h1>
+      <p className="mt-4 text-[var(--color-secondary)]">{subtitle}</p>
+      <button 
+        onClick={() => dispatcher.dispatch(onCtaClick)}
+        className="mt-6 px-6 py-2 bg-[var(--color-primary)] text-white rounded"
+      >
+        {ctaText}
+      </button>
+    </section>
+  );
+}
+```
+
+---
+
 ## Configuration Details
 
 ### Cascading Priority
