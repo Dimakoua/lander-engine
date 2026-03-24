@@ -65,9 +65,8 @@ export class WorkspaceGenerator {
       manifestContent += `registry.registerActions(Action_${index});\n`;
     });
 
-    await fs.writeFile(
-      path.join(this.workspaceDir, 'src/registry-manifest.ts'),
-      manifestContent
-    );
+    const manifestPath = path.join(this.workspaceDir, 'src/registry-manifest.ts');
+    await fs.ensureDir(path.dirname(manifestPath));
+    await fs.writeFile(manifestPath, manifestContent);
   }
 }
