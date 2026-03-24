@@ -69,7 +69,10 @@ export class ConfigParser {
     ]);
 
     if (!flow) throw new Error(`Missing mandatory flow.json for campaign: ${campaignId}`);
+    if (!flow.initialStep) throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
+    
     if (!theme) throw new Error(`Missing mandatory theme.json for campaign: ${campaignId}`);
+    if (!theme.colors) throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
 
     // Load steps
     const stepFiles = await glob(`${campaignId}/steps/*.json`, { cwd: this.baseDir });
@@ -79,8 +82,15 @@ export class ConfigParser {
       const stepName = path.basename(stepFile, '.json');
       const stepConfig = await this.readJson<StepConfig>(stepFile);
       if (stepConfig) {
+        if (!stepConfig.sections || !Array.isArray(stepConfig.sections)) {
+          throw new Error(`Step '${stepName}' in campaign '${campaignId}' must have a 'sections' array.`);
+        }
         steps[stepName] = stepConfig;
       }
+    }
+
+    if (Object.keys(steps).length === 0) {
+      throw new Error(`Campaign '${campaignId}' must have at least one step in the 'steps' directory.`);
     }
 
     return {

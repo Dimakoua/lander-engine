@@ -44,8 +44,7 @@
     "fast-glob": "^3.3.2",
     "fs-extra": "^11.2.0",
     "nanostores": "^0.10.0",
-    "tailwind-merge": "^2.2.2",
-    "zod": "^3.22.4"
+    "tailwind-merge": "^2.2.2"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
