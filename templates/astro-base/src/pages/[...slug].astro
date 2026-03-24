@@ -38,7 +38,8 @@ export async function getStaticPaths() {
             step: stepConfig,
             flow: base.flow,
             allSteps: base.steps,
-            modalConfigs: base.flow.modals || {}
+            modalConfigs: base.flow.modals || {},
+            layout: base.layout || {}
           }
         });
       }
@@ -48,7 +49,7 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { config, step, campaignId, stepId, flow, allSteps, modalConfigs } = Astro.props;
+const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
 
 // Prepare initial state
 const initialState = {
@@ -83,11 +84,23 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <meta name="description" content={step.seo?.description || config.seo.description} />
   </head>
   <body style={themeVars}>
+    {layout?.header && (
+      <header id="lander-header">
+        <Registry component={layout.header.component} props={layout.header.props} />
+      </header>
+    )}
+    
     <main id="lander-engine-root">
       {step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
       ))}
     </main>
+
+    {layout?.footer && (
+      <footer id="lander-footer">
+        <Registry component={layout.footer.component} props={layout.footer.props} />
+      </footer>
+    )}
 
     <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
 
