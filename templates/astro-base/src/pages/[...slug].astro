@@ -9,12 +9,6 @@ export async function getStaticPaths() {
   const viteEnvJsonDir = import.meta.env.LANDER_JSON_CONFIGS_DIR;
   const jsonConfigsDir = nodeEnvJsonDir || viteEnvJsonDir || '';
 
-  console.log('LANDER_JSON_CONFIGS_DIR', {
-    process: nodeEnvJsonDir,
-    importMeta: viteEnvJsonDir,
-    resolved: jsonConfigsDir,
-  });
-
   if (!jsonConfigsDir) {
     console.error('LANDER_JSON_CONFIGS_DIR is not defined');
     return [];
@@ -22,7 +16,6 @@ export async function getStaticPaths() {
 
   const parser = new ConfigParser(jsonConfigsDir);
   const campaigns = await parser.getCampaigns();
-  console.log('campaigns', campaigns);
   const paths = [];
 
   for (const campaignId of campaigns) {
