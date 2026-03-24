@@ -19,10 +19,10 @@ Set up the repository structure, build tools, and core configurations.
 ## Phase 2: The Resolver Engine (`src/resolver/`)
 Implement the build-time logic for parsing and merging JSON configurations.
 
-- [ ] **2.1. Implement File System Traversal (`parser.ts`)**
+- [x] **2.1. Implement File System Traversal (`parser.ts`)**
   - Use `fast-glob` to scan the `json_configs` directory.
   - Implement robust error handling for missing or malformed JSON files.
-- [ ] **2.2. Implement Cascading Fallback Strategy (`cascade.ts`)**
+- [x] **2.2. Implement Cascading Fallback Strategy (`cascade.ts`)**
   - Create a recursive deep-merge utility.
   - Implement the priority matrix logic: `Variant+Device > Variant > Device > Base`.
   - Ensure `theme.json` and `state.json` are correctly merged across overrides.
@@ -30,65 +30,65 @@ Implement the build-time logic for parsing and merging JSON configurations.
 ## Phase 3: The Runtime Core (`src/core/`)
 Develop the lightweight client-side logic for state and interactivity.
 
-- [ ] **3.1. Nanostores Initialization (`state.ts`)**
+- [x] **3.1. Nanostores Initialization (`state.ts`)**
   - Set up the global Nanostore for landing page state.
   - Create helper functions for getting/setting state slices.
-- [ ] **3.2. Action Dispatcher & Middleware (`dispatcher.ts`)**
+- [x] **3.2. Action Dispatcher & Middleware (`dispatcher.ts`)**
   - Implement the asynchronous event bus.
   - Build the core action handlers: `setState`, `toggleState`, `rest`, `navigation`, `sequence`, `conditional`.
   - Ensure the dispatcher is framework-agnostic.
-- [ ] **3.3. Component Registry (`registry.ts`)**
+- [x] **3.3. Component Registry (`registry.ts`)**
   - Create a central registry for mapping string identifiers to UI components.
   - Implement the `registerComponent` and `registerAction` methods.
 
 ## Phase 4: CLI & Compiler (`src/cli/`)
 Build the command-line interface to orchestrate the build process.
 
-- [ ] **4.1. CLI Entry Point (`index.ts`)**
+- [x] **4.1. CLI Entry Point (`index.ts`)**
   - Use `cac` or `commander` to define `dev` and `build` commands.
-- [ ] **4.2. Workspace Generation (`generate.ts`)**
+- [x] **4.2. Workspace Generation (`generate.ts`)**
   - Logic to create a hidden `.lander-engine` directory.
   - Symlink or copy the `templates/astro-base` into the hidden workspace.
   - Programmatically generate registry maps for auto-discovered components/actions.
-- [ ] **4.3. Programmatic Astro Invocation (`build.ts`)**
+- [x] **4.3. Programmatic Astro Invocation (`build.ts`)**
   - Wrap `astro dev` and `astro build` to run within the `.lander-engine` context.
 
 ## Phase 5: Astro Base Template (`templates/astro-base/`)
 Create the foundational Astro setup that powers the engine.
 
-- [ ] **5.1. Dynamic Catch-all Route (`[...slug].astro`)**
+- [x] **5.1. Dynamic Catch-all Route (`[...slug].astro`)**
   - Implement `getStaticPaths` to map resolved JSON configurations to URLs.
   - Create the layout wrapper that injects `theme.json` tokens as CSS variables.
-- [ ] **5.2. Section Renderer**
+- [x] **5.2. Section Renderer**
   - Logic to iterate through `sections` in a step JSON and render the corresponding Islands.
   - Implement the `renderIf` condition evaluator at the Astro component level.
 
 ## Phase 6: Auto-Discovery & Registry
 Automate the wiring of user-provided code.
 
-- [ ] **6.1. Build-time Auto-Discovery**
+- [x] **6.1. Build-time Auto-Discovery**
   - In the CLI, use `import.meta.glob` patterns to find files in `/components` and `/actions`.
   - Generate a `registry-manifest.ts` file in the hidden workspace that imports and registers these files.
-- [ ] **6.2. Runtime Integration**
+- [x] **6.2. Runtime Integration**
   - Ensure the generated manifest is loaded by the Core runtime before hydration.
 
 ## Phase 7: Plugin API & Extensibility
 Expose hooks for advanced customization.
 
-- [ ] **7.1. Implement `lander.config.ts` Loader**
+- [x] **7.1. Implement `lander.config.ts` Loader**
   - Logic to find and execute the user's config file at build time.
-- [ ] **7.2. Plugin Lifecycle Hooks**
+- [x] **7.2. Plugin Lifecycle Hooks**
   - Support `engine.registerAction` and `engine.registerComponent` via the config file.
 
 ## Phase 8: Validation & Quality Assurance
 Ensure the engine is robust and performant.
 
-- [ ] **8.1. JSON Schema Validation**
-  - Use a library like `zod` to validate user JSON configurations against the defined interfaces.
-- [ ] **8.2. Unit & Integration Tests**
+- [x] **8.1. JSON Structural Validation**
+  - Implement manual structural checks to validate user JSON configurations against the defined interfaces.
+- [x] **8.2. Unit & Integration Tests**
   - Test the Resolver's merging logic.
   - Test the Action Dispatcher's execution flow.
-- [ ] **8.3. E2E Build Test**
+- [x] **8.3. E2E Build Test**
   - Create a sample "campaign" and verify the CLI outputs the expected static HTML.
-- [ ] **8.4. Performance Audit**
+- [x] **8.4. Performance Audit**
   - Verify zero-JS default output and minimal hydration for Islands.

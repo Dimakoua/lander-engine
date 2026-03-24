@@ -1,0 +1,33 @@
+{
+  "sections": [
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Contact Us",
+        "subtitle": "Have questions? Get in touch with our team.",
+        "ctaText": "Close",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "closePopup",
+              "params": { "popupId": "secondary" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "UserDataDisplay",
+      "props": {}
+    },
+    {
+      "component": "ContactForm",
+      "props": {}
+    }
+  ],
+  "seo": {
+    "title": "Contact | Lander Engine"
+  }
+}
+

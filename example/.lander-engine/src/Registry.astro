@@ -1,0 +1,21 @@
+---
+// Auto-generated Astro Registry
+import Component_0 from '/Users/dmytro/fun/lp-factory-package/example/components/ContactForm.tsx';
+import Component_1 from '/Users/dmytro/fun/lp-factory-package/example/components/Counter.tsx';
+import Component_2 from '/Users/dmytro/fun/lp-factory-package/example/components/Features.tsx';
+import Component_3 from '/Users/dmytro/fun/lp-factory-package/example/components/Hero.tsx';
+import Component_4 from '/Users/dmytro/fun/lp-factory-package/example/components/MessageConfirmation.tsx';
+import Component_5 from '/Users/dmytro/fun/lp-factory-package/example/components/Testimonials.tsx';
+import Component_6 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataDisplay.tsx';
+import Component_7 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataForm.tsx';
+
+const { component, props } = Astro.props;
+---
+{component === 'ContactForm' && <Component_0 {...props} client:load />}
+{component === 'Counter' && <Component_1 {...props} client:load />}
+{component === 'Features' && <Component_2 {...props} client:load />}
+{component === 'Hero' && <Component_3 {...props} client:load />}
+{component === 'MessageConfirmation' && <Component_4 {...props} client:load />}
+{component === 'Testimonials' && <Component_5 {...props} client:load />}
+{component === 'UserDataDisplay' && <Component_6 {...props} client:load />}
+{component === 'UserDataForm' && <Component_7 {...props} client:load />}

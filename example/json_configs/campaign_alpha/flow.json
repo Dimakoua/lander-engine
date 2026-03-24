@@ -1,0 +1,23 @@
+{
+  "initialStep": "main",
+  "steps": {
+    "main": { "type": "normal" },
+    "actions-showcase": { "type": "normal" },
+    "secondary": { "type": "popup" },
+    "confirmation": { "type": "normal" }
+  },
+  "modals": {
+    "secondary": {
+      "backgroundColor": "#ffffff",
+      "backdropColor": "rgb(0, 0, 0)",
+      "backdropOpacity": 0.6,
+      "borderRadius": "12px",
+      "maxWidth": "800px",
+      "width": "95%",
+      "maxHeight": "75vh",
+      "padding": "2.5rem",
+      "boxShadow": "0 20px 60px rgba(0, 0, 0, 0.4)",
+      "closeOnBackdropClick": true
+    }
+  }
+}

@@ -1,0 +1,424 @@
+{
+  "sections": [
+    {
+      "component": "Hero",
+      "props": {
+        "title": "🎬 All Supported Actions",
+        "subtitle": "Explore every action type available in the Lander Engine",
+        "ctaText": "← Back to Main",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "goToNextStep",
+              "params": { "next": "main" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Features",
+      "props": {
+        "features": [
+          {
+            "icon": "🎯",
+            "title": "setState",
+            "description": "Set a value in the application state that persists across steps"
+          },
+          {
+            "icon": "🔄",
+            "title": "toggleState",
+            "description": "Toggle a boolean value in the state (true/false)"
+          },
+          {
+            "icon": "📡",
+            "title": "rest",
+            "description": "Make HTTP requests (GET, POST, PUT, DELETE) with success/error handlers"
+          },
+          {
+            "icon": "⛓️",
+            "title": "sequence",
+            "description": "Execute multiple actions in order"
+          },
+          {
+            "icon": "❓",
+            "title": "conditional",
+            "description": "Execute different actions based on conditions"
+          },
+          {
+            "icon": "🎨",
+            "title": "ui",
+            "description": "Trigger UI operations: scroll, copy, modals, navigation"
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Try Action Examples",
+        "subtitle": "Below are buttons that trigger different action types",
+        "ctaText": "📋 Copy to Clipboard",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "copyToClipboard",
+              "params": { "text": "Hello from Lander Engine! This text was copied using the copyToClipboard action." }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "UserDataForm",
+      "props": {}
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Sequence Action Example",
+        "subtitle": "Multiple actions can run together as a sequence",
+        "ctaText": "⬆️ Scroll to Top & Copy",
+        "onCtaClick": [
+          {
+            "type": "sequence",
+            "payload": {
+              "actions": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "scrollTo",
+                    "params": { "top": 0, "behavior": "smooth" }
+                  }
+                },
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "Scrolled to top and copied this message!" }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Testimonials",
+      "props": {
+        "testimonials": [
+          {
+            "quote": "setState & toggleState allow you to manage application state without a backend",
+            "author": "State Management",
+            "role": "Core Feature"
+          },
+          {
+            "quote": "REST actions enable API integration for dynamic data loading and submission",
+            "author": "API Integration",
+            "role": "Core Feature"
+          },
+          {
+            "quote": "Conditional actions let you create smart, branching user experiences",
+            "author": "Dynamic Logic",
+            "role": "Core Feature"
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "REST API Actions",
+        "subtitle": "HTTP requests with success/error handling",
+        "ctaText": "🔄 GET Example",
+        "onCtaClick": [
+          {
+            "type": "rest",
+            "payload": {
+              "url": "https://jsonplaceholder.typicode.com/posts/1",
+              "method": "GET",
+              "stateKey": "postData",
+              "onSuccess": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "GET request successful! Check the state for the fetched post data." }
+                  }
+                }
+              ],
+              "onError": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "GET request failed. Check network and try again." }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Create Data with POST",
+        "subtitle": "Send data to create a new resource",
+        "ctaText": "📤 POST Example",
+        "onCtaClick": [
+          {
+            "type": "rest",
+            "payload": {
+              "url": "https://jsonplaceholder.typicode.com/posts",
+              "method": "POST",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "body": {
+                "title": "New Post from Lander Engine",
+                "body": "This post was created via REST action",
+                "userId": 1
+              },
+              "stateKey": "newPost",
+              "onSuccess": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "POST request successful! New resource created." }
+                  }
+                }
+              ],
+              "onError": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "POST request failed." }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Update Data with PUT",
+        "subtitle": "Modify an existing resource",
+        "ctaText": "✏️ PUT Example",
+        "onCtaClick": [
+          {
+            "type": "rest",
+            "payload": {
+              "url": "https://jsonplaceholder.typicode.com/posts/1",
+              "method": "PUT",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "body": {
+                "id": 1,
+                "title": "Updated Post Title",
+                "body": "This post has been updated by Lander Engine",
+                "userId": 1
+              },
+              "stateKey": "updatedPost",
+              "onSuccess": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "PUT request successful! Resource updated." }
+                  }
+                }
+              ],
+              "onError": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "PUT request failed." }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Delete Data with DELETE",
+        "subtitle": "Remove a resource",
+        "ctaText": "🗑️ DELETE Example",
+        "onCtaClick": [
+          {
+            "type": "rest",
+            "payload": {
+              "url": "https://jsonplaceholder.typicode.com/posts/1",
+              "method": "DELETE",
+              "stateKey": "deleteResponse",
+              "onSuccess": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "DELETE request successful! Resource deleted." }
+                  }
+                }
+              ],
+              "onError": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "DELETE request failed." }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "REST with Error Handling",
+        "subtitle": "Request that intentionally fails to show error handling",
+        "ctaText": "❌ Error Example",
+        "onCtaClick": [
+          {
+            "type": "rest",
+            "payload": {
+              "url": "https://jsonplaceholder.typicode.com/invalid-endpoint",
+              "method": "GET",
+              "stateKey": "errorData",
+              "onSuccess": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "Request succeeded (unexpected)!" }
+                  }
+                }
+              ],
+              "onError": [
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "Error handled gracefully! onError handler executed." }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "REST Action Patterns",
+        "subtitle": "Common REST patterns combined with other actions",
+        "ctaText": "⛓️ REST + Sequence Example",
+        "onCtaClick": [
+          {
+            "type": "sequence",
+            "payload": {
+              "actions": [
+                {
+                  "type": "rest",
+                  "payload": {
+                    "url": "https://jsonplaceholder.typicode.com/users/1",
+                    "method": "GET",
+                    "stateKey": "userData",
+                    "onSuccess": []
+                  }
+                },
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "Fetched user data and completed sequence!" }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Loading State Demo",
+        "subtitle": "REST actions automatically manage loading state. Check state for: loading_userData",
+        "ctaText": "📡 Trigger Loading State",
+        "onCtaClick": [
+          {
+            "type": "sequence",
+            "payload": {
+              "actions": [
+                {
+                  "type": "rest",
+                  "payload": {
+                    "url": "https://jsonplaceholder.typicode.com/users/1",
+                    "method": "GET",
+                    "stateKey": "userData",
+                    "loadingKey": "userLoading",
+                    "onSuccess": []
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "payload": {
+                    "condition": "userData",
+                    "onTrue": [
+                      {
+                        "type": "ui",
+                        "payload": {
+                          "operation": "copyToClipboard",
+                          "params": { "text": "✅ User data loaded! State keys: userData (response), userLoading (false)" }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Ready to Build?",
+        "subtitle": "Use these actions to create powerful, data-driven campaigns",
+        "ctaText": "📧 View Contact Popup",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "openPopup",
+              "params": { "popupId": "secondary" }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "seo": {
+    "title": "Actions Showcase | Lander Engine"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "sections": [
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Separated Project Example",
+        "subtitle": "This project uses lander-engine as a local dependency.",
+        "ctaText": "� Open Contact Popup",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "openPopup",
+              "params": { "popupId": "secondary" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Features",
+      "props": {
+        "features": [
+          {
+            "icon": "🚀",
+            "title": "Fast & Flexible",
+            "description": "Built with the latest technologies for maximum performance"
+          },
+          {
+            "icon": "🎯",
+            "title": "Data-Driven",
+            "description": "Every component is controlled by JSON configuration"
+          },
+          {
+            "icon": "♻️",
+            "title": "Reusable",
+            "description": "Create once, deploy anywhere with the same engine"
+          }
+        ]
+      }
+    },
+    {
+      "component": "UserDataForm",
+      "props": {}
+    },
+    {
+      "component": "Counter",
+      "props": {}
+    },
+    {
+      "component": "Testimonials",
+      "props": {
+        "testimonials": [
+          {
+            "quote": "The flexibility this engine provides is unmatched.",
+            "author": "Sarah Johnson",
+            "role": "Campaign Manager"
+          },
+          {
+            "quote": "We've cut our development time in half.",
+            "author": "Mike Rodriguez",
+            "role": "Tech Lead"
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Ready to Explore?",
+        "subtitle": "Check out all supported actions and features in the showcase.",
+        "ctaText": "🎬 View Actions Showcase",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "goToNextStep",
+              "params": { "next": "actions-showcase" }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "seo": {
+    "title": "Separated Example | Lander Engine"
+  }
+}
+

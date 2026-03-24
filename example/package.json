@@ -1,0 +1,18 @@
+{
+  "name": "example-lander",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "lander dev",
+    "build": "lander build"
+  },
+  "dependencies": {
+    "lander-engine": "file:..",
+    "astro": "^4.5.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/react": "^3.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

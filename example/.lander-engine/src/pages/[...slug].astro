@@ -1,0 +1,123 @@
+---
+import { ConfigParser, resolveCascadingConfig } from 'lander-engine/resolver';
+import { hydrateState } from 'lander-engine/core';
+import '../registry-manifest'; 
+import Registry from '../Registry.astro';
+import ModalsContainer from '../ModalsContainer.astro';
+
+export async function getStaticPaths() {
+  const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
+  const viteEnvJsonDir = import.meta.env.LANDER_JSON_CONFIGS_DIR;
+  const jsonConfigsDir = nodeEnvJsonDir || viteEnvJsonDir || '';
+
+  if (!jsonConfigsDir) {
+    console.error('LANDER_JSON_CONFIGS_DIR is not defined');
+    return [];
+  }
+
+  const parser = new ConfigParser(jsonConfigsDir);
+  const campaigns = await parser.getCampaigns();
+  const paths = [];
+
+  for (const campaignId of campaigns) {
+    const base = await parser.loadCampaignBase(campaignId);
+    
+    // Filter out popup steps - only generate routes for normal steps
+    // Popups are rendered as modals within normal steps
+    for (const [stepId, stepConfig] of Object.entries(base.steps)) {
+      const stepType = base.flow.steps[stepId]?.type;
+      
+      // Only create routes for normal steps, skip popups
+      if (stepType !== 'popup') {
+        paths.push({
+          params: { slug: `${campaignId}/${stepId}` },
+          props: { 
+            campaignId, 
+            stepId, 
+            config: resolveCascadingConfig(base, undefined, undefined, undefined), // Simplified for now
+            step: stepConfig,
+            flow: base.flow,
+            allSteps: base.steps,
+            modalConfigs: base.flow.modals || {},
+            layout: base.layout || {}
+          }
+        });
+      }
+    }
+  }
+
+  return paths;
+}
+
+const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
+
+// Prepare initial state
+const initialState = {
+  ...config.state,
+  ...step.state,
+  campaignId,
+  stepId,
+};
+
+// Collect available popups for this step (popups that can be triggered from this step)
+const availablePopups: Record<string, any> = {};
+for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
+  if (flow.steps[popupId]?.type === 'popup') {
+    availablePopups[popupId] = popupStepConfig;
+  }
+}
+
+// Map theme to CSS variables
+const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
+  acc[`--color-${key}`] = val;
+  return acc;
+}, {} as Record<string, string>);
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{step.seo?.title || config.seo.title}</title>
+    <meta name="description" content={step.seo?.description || config.seo.description} />
+  </head>
+  <body style={themeVars}>
+    {layout?.header && (
+      <header id="lander-header">
+        <Registry component={layout.header.component} props={layout.header.props} />
+      </header>
+    )}
+    
+    <main id="lander-engine-root">
+      {step.sections.map((section: any) => (
+        <Registry component={section.component} props={section.props} />
+      ))}
+    </main>
+
+    {layout?.footer && (
+      <footer id="lander-footer">
+        <Registry component={layout.footer.component} props={layout.footer.props} />
+      </footer>
+    )}
+
+    <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
+
+    <script is:inline define:vars={{ initialState }}>
+      // This script runs before hydration to seed the state
+      // (Simplified for this example; in production, this would use the core's hydrateState)
+      
+      // Handle backdrop click to close modals
+      document.addEventListener('click', (e) => {
+        const modal = e.target.closest('.lander-modal');
+        if (modal && e.target === modal) {
+          const closeOnBackdrop = modal.dataset.closeOnBackdrop === 'true';
+          if (closeOnBackdrop) {
+            modal.classList.add('modal-hidden');
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

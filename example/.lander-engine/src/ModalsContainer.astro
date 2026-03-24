@@ -1,0 +1,189 @@
+---
+import Registry from './Registry.astro';
+
+interface ModalConfig {
+  backgroundColor?: string;
+  backdropColor?: string;
+  backdropOpacity?: number;
+  borderRadius?: string;
+  maxWidth?: string;
+  width?: string;
+  maxHeight?: string;
+  padding?: string;
+  boxShadow?: string;
+  closeOnBackdropClick?: boolean;
+  animation?: 'fade' | 'scale' | 'slide' | 'none';
+  animationDuration?: number;
+}
+
+interface Props {
+  popups: Record<string, any>;
+  modalConfigs?: Record<string, ModalConfig>;
+}
+
+const { popups, modalConfigs = {} } = Astro.props;
+
+const getBackdropStyle = (popupId: string): string => {
+  const config = modalConfigs[popupId] || {};
+  const backdropOpacity = config.backdropOpacity !== undefined ? config.backdropOpacity : 0.5;
+  
+  return `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, ${backdropOpacity});
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ${config.closeOnBackdropClick ? 'pointer' : 'default'};
+  `.trim().split('\n').map(line => line.trim()).join('; ') + ';';
+};
+
+const getContentStyle = (popupId: string): string => {
+  const config = modalConfigs[popupId] || {};
+  
+  return `
+    background-color: ${config.backgroundColor || '#ffffff'};
+    border-radius: ${config.borderRadius || '8px'};
+    max-width: ${config.maxWidth || '600px'};
+    width: ${config.width || '90%'};
+    max-height: ${config.maxHeight || '80vh'};
+    overflow-y: auto;
+    padding: ${config.padding || '2rem'};
+    box-shadow: ${config.boxShadow || '0 10px 40px rgba(0, 0, 0, 0.3)'};
+    position: relative;
+  `.trim().split('\n').map(line => line.trim()).join('; ') + ';';
+};
+---
+
+<div id="lander-modals-container">
+  {Object.entries(popups).map(([popupId, popupConfig]: [string, any]) => {
+    const modalConfig = modalConfigs[popupId] || {};
+    const animationClass = `modal-animation-${modalConfig.animation || 'fade'}`;
+    const backdropStyle = getBackdropStyle(popupId);
+    const contentStyle = getContentStyle(popupId);
+    
+    return (
+      <div 
+        id={`modal-${popupId}`} 
+        class={`lander-modal ${animationClass} modal-hidden`}
+        data-closeOnBackdrop={modalConfig.closeOnBackdropClick}
+        style={backdropStyle}
+      >
+        <div 
+          class="lander-modal-content"
+          style={contentStyle}
+        >
+          {popupConfig.sections.map((section: any) => (
+            <Registry component={section.component} props={section.props} />
+          ))}
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+<script is:inline>
+  // Clicking outside modal content closes the modal (click-away behavior)
+  document.addEventListener('click', (e) => {
+    const modal = e.target.closest('.lander-modal');
+    if (!modal) return;
+
+    const content = modal.querySelector('.lander-modal-content');
+    if (content && content.contains(e.target)) {
+      return; // click inside modal content does not close
+    }
+
+    const closeOnBackdrop = modal.dataset.closeOnBackdrop !== 'false';
+    if (!closeOnBackdrop) return;
+
+    modal.classList.add('modal-hidden');
+  });
+</script>
+
+<style define:vars={{ duration: `${modalConfigs?.['secondary']?.animationDuration || 300}ms` }}>
+  #lander-modals-container {
+    display: contents;
+  }
+
+  .lander-modal {
+    transition: opacity 0.2s ease-out;
+  }
+
+  .lander-modal.modal-hidden {
+    display: none !important;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .modal-animation-fade:not(.modal-hidden) {
+    animation: fadeIn var(--duration) ease-out;
+  }
+
+  .modal-animation-scale:not(.modal-hidden) {
+    animation: scaleIn var(--duration) ease-out;
+  }
+
+  .modal-animation-slide:not(.modal-hidden) {
+    animation: slideUp var(--duration) ease-out;
+  }
+
+  .modal-animation-none {
+    /* no animation */
+  }
+
+  .lander-modal-content {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+  }
+
+  /* Improve scrollbar appearance */
+  .lander-modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .lander-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .lander-modal-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+  }
+
+  .lander-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+</style>
