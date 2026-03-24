@@ -23,7 +23,7 @@ export class ConfigParser {
   private baseDir: string;
 
   constructor(baseDir: string) {
-    this.baseDir = baseDir;
+    this.baseDir = path.resolve(process.cwd(), baseDir);
   }
 
   /**

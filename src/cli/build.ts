@@ -24,7 +24,7 @@ export class Builder {
         shell: true,
         env: {
           ...process.env,
-          // Add any engine-specific env vars here
+          LANDER_JSON_CONFIGS_DIR: this.config.jsonConfigsDir,
         },
       });
 
