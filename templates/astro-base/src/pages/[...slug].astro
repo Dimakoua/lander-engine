@@ -71,12 +71,8 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
-    
-    <style define:vars={themeVars}>
-      /* Base styles and token injection */
-    </style>
   </head>
-  <body>
+  <body style={themeVars}>
     <main id="lander-engine-root">
       {step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
