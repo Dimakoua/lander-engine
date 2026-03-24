@@ -63,7 +63,7 @@ export interface ConditionalAction {
 export interface UIAction {
   type: 'ui';
   payload: {
-    operation: 'scrollTo' | 'copyToClipboard' | 'openPopup' | 'closePopup';
+    operation: 'scrollTo' | 'copyToClipboard' | 'openPopup' | 'closePopup' | 'goToNextStep';
     params?: Record<string, any>;
   };
 }

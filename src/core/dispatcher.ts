@@ -134,6 +134,28 @@ export class ActionDispatcher {
           navigator.clipboard.writeText(params.text);
         }
         break;
+      case 'goToNextStep': {
+        const nextStep = params?.next;
+        let targetPath = '/';
+
+        if (typeof nextStep === 'string') {
+          // Try to infer campaign from current URL, fallback to payload campaignId
+          const currentPathParts = window.location.pathname.split('/').filter(Boolean); // ['campaign_alpha','secondary']
+          const campaign = params?.campaignId || currentPathParts[0];
+
+          if (campaign) {
+            targetPath = `/${campaign}/${nextStep}`;
+          } else {
+            console.warn('goToNextStep: cannot infer campaign, defaulting to /');
+            targetPath = `/${nextStep}`;
+          }
+        } else {
+          console.warn('goToNextStep requires next step string in params.next');
+        }
+
+        window.location.href = targetPath;
+        break;
+      }
       // Popup logic will be implemented in Phase 5 with Astro templates
     }
   }
