@@ -32,6 +32,7 @@ export interface RestAction {
     onSuccess?: Action[];
     onError?: Action[];
     stateKey?: string; // Where to store the response
+    loadingKey?: string; // Custom key for loading state (defaults to `loading_${stateKey}`)
   };
 }
 
