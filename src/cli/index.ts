@@ -1,21 +1,46 @@
 import { cac } from 'cac';
 import path from 'path';
+import fs from 'fs-extra';
 import { WorkspaceGenerator } from './generate';
 import { Builder } from './build';
-import { LanderConfig } from '@/types/config';
+import { LanderConfig, UserLanderConfig } from '@/types/config';
 
 const cli = cac('lander');
 
 async function resolveConfig(): Promise<LanderConfig> {
   const projectRoot = process.cwd();
-  // Future: load lander.config.ts
+  // Simplified loader: in production this would use jiti or similar for TS support
+  const configPath = path.resolve(projectRoot, 'lander.config.js'); 
+  let userConfig: UserLanderConfig = {};
+
+  if (await fs.pathExists(configPath)) {
+    try {
+      const module = await import(configPath);
+      userConfig = module.default || module;
+    } catch (e) {
+      console.warn('Failed to load lander.config.js, using defaults');
+    }
+  }
+
   return {
     projectRoot,
     jsonConfigsDir: 'json_configs',
     componentsDir: 'components',
     actionsDir: 'actions',
     outputDir: 'dist',
-  };
+    plugins: [],
+    ...userConfig,
+  } as LanderConfig;
+}
+
+async function runPlugins(config: LanderConfig, hook: 'onBeforeBuild' | 'onAfterBuild') {
+  if (!config.plugins) return;
+  for (const plugin of config.plugins) {
+    if (plugin[hook]) {
+      console.log(`Running plugin hook: ${plugin.name}.${hook}`);
+      await plugin[hook]!(config);
+    }
+  }
 }
 
 cli
@@ -24,6 +49,8 @@ cli
     const config = await resolveConfig();
     const generator = new WorkspaceGenerator(config);
     const builder = new Builder(config);
+
+    await runPlugins(config, 'onBeforeBuild');
 
     console.log('Generating workspace...');
     await generator.generate();
@@ -39,11 +66,15 @@ cli
     const generator = new WorkspaceGenerator(config);
     const builder = new Builder(config);
 
+    await runPlugins(config, 'onBeforeBuild');
+
     console.log('Generating workspace...');
     await generator.generate();
 
     console.log('Building project...');
     await builder.runAstro('build');
+
+    await runPlugins(config, 'onAfterBuild');
   });
 
 cli.help();
