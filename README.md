@@ -216,6 +216,47 @@ Any component placed in `/components` is automatically available in your JSON by
 -   `npm run dev`: Starts the engine in watch mode.
 -   `npm run typecheck`: Validates TypeScript interfaces.
 
+## Production / Release
+
+1. Build engine and example output:
+
+```bash
+cd <path-to-your-repo>
+npm install
+npm run build
+```
+
+2. Confirm generated static site:
+
+- `your-repo/.lander-engine/dist/campaign_name/main/index.html`
+- `your-repo/.lander-engine/dist/campaign_name/secondary/index.html`
+- `your-repo/.lander-engine/dist/campaign_name/confirmation/index.html`
+
+3. Optional preview:
+
+```bash
+cd example
+npx astro preview --host 0.0.0.0 --port 4321
+```
+
+4. Deploy static output to any static host (Netlify, Vercel, GitHub Pages, S3, etc.) from:
+
+- `your-repo/.lander-engine/dist`
+
+5. Environment variables for production:
+
+- `LANDER_JSON_CONFIGS_DIR` (defaults to `./json_configs`)
+- `LANDER_CONTENT_PATHS` (for Tailwind content scan)
+- `NODE_ENV=production`
+- `PORT` as needed
+
+6. Common production server run (optional):
+
+```bash
+npm run build
+npx serve -s .lander-engine/dist
+```
+
 ## License
 
 MIT
