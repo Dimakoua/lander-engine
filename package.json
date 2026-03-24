@@ -3,32 +3,32 @@
   "version": "0.1.0",
   "description": "Configuration-driven JAMstack landing page meta-framework",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "lander": "./dist/cli/index.js"
+    "lander": "./dist/cli/index.cjs"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./cli": {
       "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.mjs",
-      "require": "./dist/cli/index.js"
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
     },
     "./core": {
       "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.mjs",
-      "require": "./dist/core/index.js"
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
     },
     "./resolver": {
       "types": "./dist/resolver/index.d.ts",
-      "import": "./dist/resolver/index.mjs",
-      "require": "./dist/resolver/index.js"
+      "import": "./dist/resolver/index.js",
+      "require": "./dist/resolver/index.cjs"
     }
   },
   "scripts": {
