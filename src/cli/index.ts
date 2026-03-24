@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { cac } from 'cac';
 import path from 'path';
 import fs from 'fs-extra';
@@ -5,10 +6,19 @@ import { WorkspaceGenerator } from './generate';
 import { Builder } from './build';
 import { LanderConfig, UserLanderConfig } from '@/types/config';
 
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const cli = cac('lander');
 
 async function resolveConfig(): Promise<LanderConfig> {
   const projectRoot = process.cwd();
+  // __dirname is dist/cli, so we go up twice to reach the package root
+  const engineRoot = path.resolve(__dirname, '../../');
+  
   // Simplified loader: in production this would use jiti or similar for TS support
   const configPath = path.resolve(projectRoot, 'lander.config.js'); 
   let userConfig: UserLanderConfig = {};
@@ -24,6 +34,7 @@ async function resolveConfig(): Promise<LanderConfig> {
 
   return {
     projectRoot,
+    engineRoot,
     jsonConfigsDir: 'json_configs',
     componentsDir: 'components',
     actionsDir: 'actions',

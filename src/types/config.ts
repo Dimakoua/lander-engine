@@ -8,6 +8,7 @@ export interface LanderPlugin {
 
 export interface LanderConfig {
   projectRoot: string;
+  engineRoot: string;      // Root of lander-engine package (used for template files)
   jsonConfigsDir?: string; // Default: 'json_configs'
   componentsDir?: string;  // Default: 'components'
   actionsDir?: string;     // Default: 'actions'

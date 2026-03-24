@@ -18,13 +18,18 @@ export class Builder {
     return new Promise<void>((resolve, reject) => {
       const astroBin = path.resolve(this.config.projectRoot, 'node_modules/.bin/astro');
       
+      // Make the config loader run against the real project source, not the hidden workspace copy.
+      const jsonConfigsDir = this.config.jsonConfigsDir
+        ? path.resolve(this.config.projectRoot, this.config.jsonConfigsDir)
+        : path.resolve(this.config.projectRoot, 'json_configs');
+
       const child = spawn(astroBin, [command], {
         cwd: this.workspaceDir,
         stdio: 'inherit',
         shell: true,
         env: {
           ...process.env,
-          LANDER_JSON_CONFIGS_DIR: this.config.jsonConfigsDir,
+          LANDER_JSON_CONFIGS_DIR: jsonConfigsDir,
         },
       });
 
