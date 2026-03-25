@@ -7,7 +7,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "lander": "./dist/cli/index.cjs"
+    "lander": "./dist/cli/index.js"
   },
   "exports": {
     ".": {
