@@ -1,0 +1,82 @@
+{
+  "sections": [
+    {
+      "component": "Hero",
+      "props": {
+        "title": "🎬 Actions",
+        "subtitle": "Mobile-friendly action showcase",
+        "ctaText": "← Back",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "goToNextStep",
+              "params": { "next": "main" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Features",
+      "props": {
+        "features": [
+          {
+            "icon": "🎯",
+            "title": "setState",
+            "description": "Set state values"
+          },
+          {
+            "icon": "🔄",
+            "title": "toggleState",
+            "description": "Toggle booleans"
+          },
+          {
+            "icon": "📡",
+            "title": "REST",
+            "description": "Make HTTP requests"
+          },
+          {
+            "icon": "⛓️",
+            "title": "sequence",
+            "description": "Chain actions"
+          },
+          {
+            "icon": "❓",
+            "title": "conditional",
+            "description": "Branch logic"
+          },
+          {
+            "icon": "🎨",
+            "title": "UI ops",
+            "description": "UI interactions"
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Try Actions",
+        "subtitle": "Tap buttons below",
+        "ctaText": "📋 Copy Text",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "copyToClipboard",
+              "params": { "text": "Copied from Lander Engine!" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "UserDataForm",
+      "props": {}
+    }
+  ],
+  "seo": {
+    "title": "Actions | Lander Mobile"
+  }
+}

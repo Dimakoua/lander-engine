@@ -1,0 +1,16 @@
+{
+  "header": {
+    "component": "Hero",
+    "props": {
+      "title": "📱 Mobile Demo",
+      "subtitle": "Optimized for mobile devices"
+    }
+  },
+  "footer": {
+    "component": "Hero",
+    "props": {
+      "title": "Thanks!",
+      "subtitle": "Lander Engine"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "colors": {
+    "primary": "#2563eb",
+    "secondary": "#0f172a",
+    "background": "#ffffff",
+    "text": "#0b0c10"
+  },
+  "tokens": {
+    "buttonRadius": "8px"
+  }
+}

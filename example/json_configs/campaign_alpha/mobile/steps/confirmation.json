@@ -1,0 +1,28 @@
+{
+  "sections": [
+    {
+      "component": "MessageConfirmation",
+      "props": {}
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "✓ Done!",
+        "subtitle": "Your message was saved.",
+        "ctaText": "← Home",
+        "onCtaClick": [
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "goToNextStep",
+              "params": { "next": "main" }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "seo": {
+    "title": "Confirmed | Lander Mobile"
+  }
+}
