@@ -1,8 +1,25 @@
 /**
+ * Supported device types for targeting
+ */
+export type DeviceType = 'desktop' | 'mobile' | 'tablet' | string;
+
+/**
+ * Configuration parameters for resolution
+ */
+export interface ResolutionParams {
+  device?: DeviceType;  // Target device (e.g., "desktop", "mobile")
+  variant?: string;     // A/B test variant ID (e.g., "beta", "v2")
+}
+
+/**
  * Simple deep merge utility for JSON objects.
  * Prioritizes properties from the 'source' object.
+ * Arrays are replaced, not merged.
  */
-export function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+export function deepMerge<T extends Record<string, any>>(
+  target: T,
+  source: Partial<T>
+): T {
   const result = { ...target };
 
   for (const key in source) {
@@ -11,16 +28,18 @@ export function deepMerge<T extends Record<string, any>>(target: T, source: Part
       const targetValue = result[key];
 
       if (
-        sourceValue && 
-        typeof sourceValue === 'object' && 
-        !Array.isArray(sourceValue) && 
+        sourceValue &&
+        typeof sourceValue === 'object' &&
+        !Array.isArray(sourceValue) &&
         sourceValue !== null
       ) {
+        // Recursively merge nested objects
         result[key] = deepMerge(
           (targetValue && typeof targetValue === 'object' ? targetValue : {}) as any,
           sourceValue
         );
       } else {
+        // Replace with source value (including arrays)
         result[key] = sourceValue as any;
       }
     }
@@ -31,7 +50,12 @@ export function deepMerge<T extends Record<string, any>>(target: T, source: Part
 
 /**
  * Resolves the final configuration by applying overrides in priority order.
- * Priority: Base < Device < Variant < Variant+Device
+ * 
+ * Priority order (lowest to highest):
+ * 1. Base config
+ * 2. Device override (e.g., desktop-specific)
+ * 3. Variant override (e.g., A/B test variant)
+ * 4. Variant+Device override (highest priority, combines both)
  */
 export function resolveCascadingConfig<T extends Record<string, any>>(
   base: T,
@@ -41,17 +65,61 @@ export function resolveCascadingConfig<T extends Record<string, any>>(
 ): T {
   let resolved = { ...base };
 
+  // Apply device override (lower priority)
   if (deviceOverride) {
     resolved = deepMerge(resolved, deviceOverride);
   }
 
+  // Apply variant override (medium priority)
   if (variantOverride) {
     resolved = deepMerge(resolved, variantOverride);
   }
 
+  // Apply variant+device override (highest priority)
   if (variantDeviceOverride) {
     resolved = deepMerge(resolved, variantDeviceOverride);
   }
 
   return resolved;
 }
+
+/**
+ * Helper function to determine which override files would be checked.
+ * Useful for validation and logging.
+ *
+ * For example, with variant="beta" and device="desktop":
+ * - filename-beta.json (variant-only)
+ * - filename-beta-desktop.json (variant+device)
+ */
+export function getOverridePaths(
+  baseFileName: string,
+  params: ResolutionParams
+): { device?: string; variant?: string; variantDevice?: string } {
+  const result: { device?: string; variant?: string; variantDevice?: string } = {};
+
+  // Generate device override path
+  if (params.device) {
+    const ext = path.extname(baseFileName);
+    const base = path.basename(baseFileName, ext);
+    result.device = `${base}.${params.device}${ext}`;
+  }
+
+  // Generate variant override path
+  if (params.variant) {
+    const ext = path.extname(baseFileName);
+    const base = path.basename(baseFileName, ext);
+    result.variant = `${base}-${params.variant}${ext}`;
+  }
+
+  // Generate variant+device override path
+  if (params.variant && params.device) {
+    const ext = path.extname(baseFileName);
+    const base = path.basename(baseFileName, ext);
+    result.variantDevice = `${base}-${params.variant}-${params.device}${ext}`;
+  }
+
+  return result;
+}
+
+// Import path for getOverridePaths function
+import path from 'path';

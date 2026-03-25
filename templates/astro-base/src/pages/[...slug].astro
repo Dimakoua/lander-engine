@@ -28,11 +28,13 @@ export async function getStaticPaths() {
 
     for (const campaignId of campaigns) {
       try {
-        const base = await parser.loadCampaignBase(campaignId);
+        // Load base campaign (without device/variant overrides)
+        // In production, you might want to generate separate builds for different variants/devices
+        const { config, metadata } = await parser.loadCampaignWithOverrides(campaignId);
         
         // Generate routes for each normal (non-popup) step
-        for (const [stepId, stepConfig] of Object.entries(base.steps)) {
-          const stepType = base.flow.steps[stepId]?.type;
+        for (const [stepId, stepConfig] of Object.entries(config.steps)) {
+          const stepType = config.flow.steps[stepId]?.type;
           
           // Only create routes for normal steps, skip popups
           if (stepType !== 'popup') {
@@ -41,12 +43,13 @@ export async function getStaticPaths() {
               props: { 
                 campaignId, 
                 stepId, 
-                config: resolveCascadingConfig(base, undefined, undefined, undefined),
+                config,
                 step: stepConfig,
-                flow: base.flow,
-                allSteps: base.steps,
-                modalConfigs: base.flow.modals || {},
-                layout: base.layout || {}
+                flow: config.flow,
+                allSteps: config.steps,
+                modalConfigs: config.flow.modals || {},
+                layout: config.layout || {},
+                metadata,
               }
             });
           }
@@ -67,14 +70,16 @@ export async function getStaticPaths() {
   }
 }
 
-const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
+const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout, metadata } = Astro.props;
 
-// Prepare initial state
+// Prepare initial state with override information
 const initialState = {
   ...config.state,
   ...step.state,
   campaignId,
   stepId,
+  // Include which overrides were applied for debugging/analytics
+  appliedOverrides: metadata?.appliedOverrides || {},
 };
 
 // Collect available popups for this step (popups that can be triggered from this step)
@@ -100,6 +105,9 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={step.seo?.description || config.seo.description || ''} />
     <title>{step.seo?.title || config.seo.title || campaignId}</title>
+    <!-- Include variant/device info for analytics -->
+    {metadata?.variant && <meta name="lander:variant" content={metadata.variant} />}
+    {metadata?.device && <meta name="lander:device" content={metadata.device} />}
   </head>
   <body style={themeVars}>
     {layout?.header && (
