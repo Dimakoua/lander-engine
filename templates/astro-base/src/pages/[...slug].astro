@@ -90,49 +90,13 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { base, mobileOverrides, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
-
-// Detect device type from user-agent
-const userAgent = Astro.request.headers.get('user-agent') || '';
-const deviceType = detectDeviceType(userAgent);
-
-// Apply device-specific overrides if running on mobile
-let finalConfig = config;
-let finalStep = step;
-let finalFlow = flow;
-let finalLayout = layout;
-let finalModalConfigs = modalConfigs;
-
-if (deviceType === 'mobile' && Object.keys(mobileOverrides).length > 0) {
-  // Merge mobile overrides into base config
-  finalConfig = resolveCascadingConfig(base, mobileOverrides as any, undefined, undefined);
-  
-  // Update step if mobile overrides include it
-  if (mobileOverrides.steps?.[stepId]) {
-    finalStep = { ...step, ...mobileOverrides.steps[stepId] };
-  }
-  
-  // Update flow if mobile overrides include it
-  if (mobileOverrides.flow) {
-    finalFlow = { ...flow, ...mobileOverrides.flow };
-  }
-  
-  // Update layout if mobile overrides include it
-  if (mobileOverrides.layout) {
-    finalLayout = { ...layout, ...mobileOverrides.layout };
-  }
-  
-  // Update modal configs if mobile overrides include it
-  if (mobileOverrides.flow?.modals) {
-    finalModalConfigs = { ...modalConfigs, ...mobileOverrides.flow.modals };
-  }
-}
+const { isMobile, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
 
 // Prepare initial state
 const initialState = {
-  ...finalConfig.state,
-  ...finalStep.state,
-  deviceType, // Include device type in state for reactive components
+  ...config.state,
+  ...step.state,
+  isMobile, // Include device type in state for reactive components
   campaignId,
   stepId,
 };
@@ -140,13 +104,13 @@ const initialState = {
 // Collect available popups for this step (popups that can be triggered from this step)
 const availablePopups: Record<string, any> = {};
 for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
-  if (finalFlow.steps[popupId]?.type === 'popup') {
+  if (flow.steps[popupId]?.type === 'popup') {
     availablePopups[popupId] = popupStepConfig;
   }
 }
 
 // Map theme to CSS variables
-const themeVars = Object.entries(finalConfig.theme.colors || {}).reduce((acc, [key, val]) => {
+const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
   acc[`--color-${key}`] = val;
   return acc;
 }, {} as Record<string, string>);
