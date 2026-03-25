@@ -22,10 +22,5 @@ function getContentPaths() {
 
   // Default content paths - from the generated workspace context
   // These paths work both in dev and build where the workspace is generated
-  return [
-    './src/**/*.{astro,jsx,tsx}',
-    '../components/**/*.{astro,jsx,tsx}',
-    './**/*.astro',
-  ];
+  return ['./src/**/*.{astro,jsx,tsx}', '../components/**/*.{astro,jsx,tsx}', './**/*.astro'];
 }
-

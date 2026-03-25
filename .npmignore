@@ -1,0 +1,44 @@
+# Source files
+src/
+examples/
+templates/
+
+# Development files
+*.test.ts
+*.spec.ts
+*.test.js
+*.spec.js
+__tests__/
+.github/
+.git
+.gitignore
+
+# Documentation & Reports
+README.md
+tasks.md
+npm-readiness-report.md
+CONTRIBUTING.md
+docs/
+
+# Configuration files
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+.eslintrc.js
+.prettierrc
+.prettierignore
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# Build/dist artifacts (note: dist/ IS included in npm via artifacts below)
+*.tsbuildinfo
+.turbo/

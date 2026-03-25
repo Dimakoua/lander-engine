@@ -19,34 +19,27 @@ const cli = cac('lander');
  */
 async function validateProject(config: LanderConfig): Promise<void> {
   const projectRoot = config.projectRoot;
-  
+
   // Check package.json exists
   const pkgJsonPath = path.join(projectRoot, 'package.json');
   if (!(await fs.pathExists(pkgJsonPath))) {
     throw new Error(
       `package.json not found in project root: ${projectRoot}\n` +
-      `Make sure you're running this command from your project directory.`
+        `Make sure you're running this command from your project directory.`
     );
   }
 
   // Check if astro is installed
   const astroPath = path.join(projectRoot, 'node_modules', 'astro');
   if (!(await fs.pathExists(astroPath))) {
-    throw new Error(
-      `Astro not found. Install it with:\n` +
-      `  npm install --save astro`
-    );
+    throw new Error(`Astro not found. Install it with:\n` + `  npm install --save astro`);
   }
 
   // Warn if json_configs directory doesn't exist
   const configDir = path.join(projectRoot, config.jsonConfigsDir || 'json_configs');
   if (!(await fs.pathExists(configDir))) {
-    console.warn(
-      `⚠  Configuration directory not found: ${configDir}`
-    );
-    console.warn(
-      `   Create it and add your campaign configurations there.`
-    );
+    console.warn(`⚠  Configuration directory not found: ${configDir}`);
+    console.warn(`   Create it and add your campaign configurations there.`);
   }
 }
 
@@ -57,9 +50,9 @@ async function resolveConfig(): Promise<LanderConfig> {
   const projectRoot = process.cwd();
   // __dirname is dist/cli, so we go up two levels to reach the package root
   const engineRoot = path.resolve(__dirname, '../../');
-  
+
   // Try to load lander.config.js
-  const configPath = path.resolve(projectRoot, 'lander.config.js'); 
+  const configPath = path.resolve(projectRoot, 'lander.config.js');
   let userConfig: UserLanderConfig = {};
 
   if (await fs.pathExists(configPath)) {
@@ -68,7 +61,9 @@ async function resolveConfig(): Promise<LanderConfig> {
       userConfig = module.default || module;
       console.log(`✓ Loaded config from ${configPath}`);
     } catch (e) {
-      console.warn(`⚠  Failed to load lander.config.js: ${e instanceof Error ? e.message : String(e)}`);
+      console.warn(
+        `⚠  Failed to load lander.config.js: ${e instanceof Error ? e.message : String(e)}`
+      );
       console.warn(`   Using default configuration`);
     }
   }
@@ -104,7 +99,7 @@ async function runPlugins(
       } catch (error) {
         throw new Error(
           `Plugin '${plugin.name}' hook '${hook}' failed: ` +
-          `${error instanceof Error ? error.message : String(error)}`
+            `${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -112,60 +107,56 @@ async function runPlugins(
 }
 
 // Development server command
-cli
-  .command('dev', 'Start the development server')
-  .action(async () => {
-    try {
-      console.log('🚀 Lander Engine - Development Mode\n');
-      
-      const config = await resolveConfig();
-      await validateProject(config);
+cli.command('dev', 'Start the development server').action(async () => {
+  try {
+    console.log('🚀 Lander Engine - Development Mode\n');
 
-      const generator = new WorkspaceGenerator(config);
-      const builder = new Builder(config);
+    const config = await resolveConfig();
+    await validateProject(config);
 
-      await runPlugins(config, 'onBeforeBuild');
+    const generator = new WorkspaceGenerator(config);
+    const builder = new Builder(config);
 
-      console.log('\n📦 Generating workspace...');
-      await generator.generate();
+    await runPlugins(config, 'onBeforeBuild');
 
-      console.log('\n🔥 Starting development server...');
-      await builder.runAstro('dev');
-    } catch (error) {
-      console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
-  });
+    console.log('\n📦 Generating workspace...');
+    await generator.generate();
+
+    console.log('\n🔥 Starting development server...');
+    await builder.runAstro('dev');
+  } catch (error) {
+    console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+});
 
 // Production build command
-cli
-  .command('build', 'Build the static landing pages')
-  .action(async () => {
-    try {
-      console.log('🚀 Lander Engine - Production Build\n');
-      
-      const config = await resolveConfig();
-      await validateProject(config);
+cli.command('build', 'Build the static landing pages').action(async () => {
+  try {
+    console.log('🚀 Lander Engine - Production Build\n');
 
-      const generator = new WorkspaceGenerator(config);
-      const builder = new Builder(config);
+    const config = await resolveConfig();
+    await validateProject(config);
 
-      await runPlugins(config, 'onBeforeBuild');
+    const generator = new WorkspaceGenerator(config);
+    const builder = new Builder(config);
 
-      console.log('\n📦 Generating workspace...');
-      await generator.generate();
+    await runPlugins(config, 'onBeforeBuild');
 
-      console.log('\n🏗  Building project...');
-      await builder.runAstro('build');
+    console.log('\n📦 Generating workspace...');
+    await generator.generate();
 
-      await runPlugins(config, 'onAfterBuild');
+    console.log('\n🏗  Building project...');
+    await builder.runAstro('build');
 
-      console.log('\n✨ Build complete! Output: .lander-engine/dist');
-    } catch (error) {
-      console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
-  });
+    await runPlugins(config, 'onAfterBuild');
+
+    console.log('\n✨ Build complete! Output: .lander-engine/dist');
+  } catch (error) {
+    console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+});
 
 cli.help();
 cli.version('0.1.0');

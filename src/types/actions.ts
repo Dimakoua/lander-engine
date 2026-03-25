@@ -1,10 +1,10 @@
-export type ActionType = 
-  | 'setState' 
-  | 'toggleState' 
-  | 'rest' 
-  | 'navigation' 
-  | 'sequence' 
-  | 'conditional' 
+export type ActionType =
+  | 'setState'
+  | 'toggleState'
+  | 'rest'
+  | 'navigation'
+  | 'sequence'
+  | 'conditional'
   | 'ui';
 
 export interface SetStateAction {
@@ -69,11 +69,11 @@ export interface UIAction {
   };
 }
 
-export type Action = 
-  | SetStateAction 
-  | ToggleStateAction 
-  | RestAction 
-  | NavigationAction 
-  | SequenceAction 
-  | ConditionalAction 
+export type Action =
+  | SetStateAction
+  | ToggleStateAction
+  | RestAction
+  | NavigationAction
+  | SequenceAction
+  | ConditionalAction
   | UIAction;

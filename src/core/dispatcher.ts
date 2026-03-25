@@ -48,13 +48,22 @@ export class ActionDispatcher {
         break;
 
       case 'rest': {
-        const { url, method = 'GET', headers, body, onSuccess, onError, stateKey, loadingKey } = action.payload;
+        const {
+          url,
+          method = 'GET',
+          headers,
+          body,
+          onSuccess,
+          onError,
+          stateKey,
+          loadingKey,
+        } = action.payload;
         const loadKey = loadingKey || `loading_${stateKey || 'request'}`;
-        
+
         try {
           // Set loading state
           setState(loadKey, true);
-          
+
           const response = await fetch(url, {
             method,
             headers: {
@@ -65,22 +74,22 @@ export class ActionDispatcher {
           });
 
           if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-          
+
           const data = await response.json();
           if (stateKey) {
             setState(stateKey, data);
           }
-          
+
           // Clear loading state on success
           setState(loadKey, false);
-          
+
           if (onSuccess) await this.dispatch(onSuccess);
         } catch (error) {
           console.error(`REST Action failed: ${url}`, error);
-          
+
           // Clear loading state on error
           setState(loadKey, false);
-          
+
           if (onError) await this.dispatch(onError);
         }
         break;

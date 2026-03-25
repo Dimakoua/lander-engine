@@ -1,19 +1,13 @@
 import fs from 'fs-extra';
 import path from 'path';
 import glob from 'fast-glob';
-import { 
-  FlowConfig, 
-  ThemeConfig, 
-  LayoutConfig, 
-  SEOConfig, 
-  StepConfig 
-} from '@/types/schema';
-import { 
-  deepMerge, 
-  resolveCascadingConfig, 
+import { FlowConfig, ThemeConfig, LayoutConfig, SEOConfig, StepConfig } from '@/types/schema';
+import {
+  deepMerge,
+  resolveCascadingConfig,
   resolveDevice,
-  ResolutionParams, 
-  DeviceDetectionOptions 
+  ResolutionParams,
+  DeviceDetectionOptions,
 } from './cascade';
 
 export interface CampaignConfig {
@@ -61,7 +55,7 @@ export class ConfigParser {
    */
   private async readJson<T>(filePath: string): Promise<T | null> {
     const fullPath = path.resolve(this.baseDir, filePath);
-    
+
     if (!(await fs.pathExists(fullPath))) {
       return null;
     }
@@ -87,10 +81,12 @@ export class ConfigParser {
     ]);
 
     if (!flow) throw new Error(`Missing mandatory flow.json for campaign: ${campaignId}`);
-    if (!flow.initialStep) throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
-    
+    if (!flow.initialStep)
+      throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
+
     if (!theme) throw new Error(`Missing mandatory theme.json for campaign: ${campaignId}`);
-    if (!theme.colors) throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
+    if (!theme.colors)
+      throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
 
     // Load steps
     const stepFiles = await glob(`${campaignId}/steps/*.json`, { cwd: this.baseDir });
@@ -101,14 +97,18 @@ export class ConfigParser {
       const stepConfig = await this.readJson<StepConfig>(stepFile);
       if (stepConfig) {
         if (!stepConfig.sections || !Array.isArray(stepConfig.sections)) {
-          throw new Error(`Step '${stepName}' in campaign '${campaignId}' must have a 'sections' array.`);
+          throw new Error(
+            `Step '${stepName}' in campaign '${campaignId}' must have a 'sections' array.`
+          );
         }
         steps[stepName] = stepConfig;
       }
     }
 
     if (Object.keys(steps).length === 0) {
-      throw new Error(`Campaign '${campaignId}' must have at least one step in the 'steps' directory.`);
+      throw new Error(
+        `Campaign '${campaignId}' must have at least one step in the 'steps' directory.`
+      );
     }
 
     return {
@@ -170,7 +170,7 @@ export class ConfigParser {
     const ext = path.extname(fileName);
     const baseName = path.basename(fileName, ext);
     const fileWithSuffix = fileSuffix ? `${baseName}${fileSuffix}${ext}` : fileName;
-    
+
     return this.readJson<T>(`${campaignId}/${fileWithSuffix}`);
   }
 
@@ -183,7 +183,7 @@ export class ConfigParser {
     params: ResolutionParams
   ): Promise<Record<string, StepConfig>> {
     // Load base step files
-    const stepFiles = await glob(`${campaignId}/steps/*.json`, { 
+    const stepFiles = await glob(`${campaignId}/steps/*.json`, {
       cwd: this.baseDir,
       ignore: ['**/*-*', '**/.*'],
     });
@@ -235,7 +235,9 @@ export class ConfigParser {
     }
 
     if (Object.keys(steps).length === 0) {
-      throw new Error(`Campaign '${campaignId}' must have at least one step in the 'steps' directory.`);
+      throw new Error(
+        `Campaign '${campaignId}' must have at least one step in the 'steps' directory.`
+      );
     }
 
     return steps;
@@ -243,15 +245,15 @@ export class ConfigParser {
 
   /**
    * Loads a campaign configuration with optional device/variant overrides.
-   * 
+   *
    * Supports cascading configuration lookup with priority order:
    * 1. Base config (e.g., flow.json)
    * 2. Device override (e.g., flow.desktop.json)
    * 3. Variant override (e.g., flow-beta.json)
    * 4. Variant+Device override (e.g., flow-beta-desktop.json) - highest priority
-   * 
+   *
    * Supports automatic device detection if device is not explicitly specified.
-   * 
+   *
    * @param campaignId - Campaign folder name
    * @param params - Optional device/variant parameters
    * @param detectionOptions - Optional device detection options for auto-detection
@@ -265,7 +267,7 @@ export class ConfigParser {
     // Auto-detect device if enabled and not explicitly provided
     const device = resolveDevice(params, detectionOptions);
     const autoDetected = !params?.device && device !== undefined;
-    
+
     // Create effective params with detected device
     const effectiveParams: ResolutionParams = {
       ...params,
@@ -284,9 +286,11 @@ export class ConfigParser {
 
     // Validate mandatory files
     if (!flow) throw new Error(`Missing mandatory flow.json for campaign: ${campaignId}`);
-    if (!flow.initialStep) throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
+    if (!flow.initialStep)
+      throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
     if (!theme) throw new Error(`Missing mandatory theme.json for campaign: ${campaignId}`);
-    if (!theme.colors) throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
+    if (!theme.colors)
+      throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
 
     const metadata: OverrideLoadingMetadata = {
       variant: effectiveParams.variant,
@@ -462,10 +466,10 @@ export class ConfigParser {
   /**
    * Detects available variants for a campaign by scanning directory structure.
    * Looks for files or directories with variant suffixes like "-beta", "-variant-name".
-   * 
+   *
    * @param campaignId Campaign directory name
    * @returns Array of variant identifiers found
-   * 
+   *
    * @example
    * // If campaign has: flow.json, flow-beta.json, flow-v2.json, flow-beta-desktop.json
    * // Returns: ['beta', 'v2', 'beta-desktop']
@@ -486,8 +490,8 @@ export class ConfigParser {
       for (const file of jsonFiles) {
         const baseName = path.basename(file, '.json');
         // Look for suffixes like "flow-beta" (after the base name)
-        const baseNames = ["flow", "theme", "layout", "seo", "state"];
-        
+        const baseNames = ['flow', 'theme', 'layout', 'seo', 'state'];
+
         for (const base of baseNames) {
           if (baseName.startsWith(base + '-')) {
             const suffix = baseName.substring(base.length + 1); // Remove "flow-" prefix
@@ -511,10 +515,10 @@ export class ConfigParser {
   /**
    * Detects available devices for a campaign by scanning file/directory names.
    * Looks for known device suffixes like "-mobile", "-desktop", "-tablet".
-   * 
+   *
    * @param campaignId Campaign directory name
    * @returns Array of device identifiers found
-   * 
+   *
    * @example
    * // If campaign has: flow.desktop.json, flow.mobile.json, flow-beta-tablet.json
    * // Returns: ['desktop', 'mobile', 'tablet']
@@ -534,7 +538,7 @@ export class ConfigParser {
 
       for (const file of jsonFiles) {
         const baseName = path.basename(file, '.json');
-        
+
         for (const device of knownDevices) {
           // Match patterns like "flow.desktop" or "flow-beta-mobile"
           if (baseName.endsWith(`.${device}`) || baseName.endsWith(`-${device}`)) {
@@ -553,13 +557,13 @@ export class ConfigParser {
   /**
    * Gets all available variant/device combinations for a campaign.
    * Useful for generating all possible static routes.
-   * 
+   *
    * @param campaignId Campaign directory name
    * @returns Array of {variant?, device?} combinations
-   * 
+   *
    * @example
    * // If campaign has variants ['beta', 'v2'] and devices ['mobile', 'desktop']
-   * // Returns: 
+   * // Returns:
    * // [
    * //   {},                              (base)
    * //   {device: 'mobile'},

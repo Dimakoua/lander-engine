@@ -4,11 +4,11 @@
 
 ## Key Features
 
--   **Zero-JS by Default**: Outputs static HTML; hydrates only interactive "Islands".
--   **Cascading Overrides**: Built-in support for A/B variants and Device-specific (mobile/desktop) configurations.
--   **Configuration-Driven**: Manage your entire campaign structure, theme, and state via JSON.
--   **Action Dispatcher**: Framework-agnostic event bus to handle complex UI interactions and API calls.
--   **Auto-Discovery**: Automatic registration of your UI components and custom action handlers.
+- **Zero-JS by Default**: Outputs static HTML; hydrates only interactive "Islands".
+- **Cascading Overrides**: Built-in support for A/B variants and Device-specific (mobile/desktop) configurations.
+- **Configuration-Driven**: Manage your entire campaign structure, theme, and state via JSON.
+- **Action Dispatcher**: Framework-agnostic event bus to handle complex UI interactions and API calls.
+- **Auto-Discovery**: Automatic registration of your UI components and custom action handlers.
 
 ---
 
@@ -53,11 +53,11 @@ You can override the default directory structure in `lander.config.js`:
 
 ```javascript
 export default {
-  jsonConfigsDir: 'my_configs',   // Default: 'json_configs'
+  jsonConfigsDir: 'my_configs', // Default: 'json_configs'
   componentsDir: 'my_components', // Default: 'components'
-  actionsDir: 'my_actions',       // Default: 'actions'
-  outputDir: 'dist',              // Default: 'dist'
-  plugins: []
+  actionsDir: 'my_actions', // Default: 'actions'
+  outputDir: 'dist', // Default: 'dist'
+  plugins: [],
 };
 ```
 
@@ -68,7 +68,9 @@ export default {
 Here is how a real campaign is structured in your `json_configs/` directory.
 
 ### 1. `campaign_alpha/flow.json`
+
 Defines the steps and routing.
+
 ```json
 {
   "initialStep": "main",
@@ -81,7 +83,9 @@ Defines the steps and routing.
 ```
 
 ### 2. `campaign_alpha/theme.json`
+
 Defines design tokens used across the campaign.
+
 ```json
 {
   "colors": {
@@ -97,7 +101,9 @@ Defines design tokens used across the campaign.
 ```
 
 ### 3. `campaign_alpha/steps/main.json`
+
 Defines the layout and components for the 'main' step.
+
 ```json
 {
   "sections": [
@@ -129,7 +135,9 @@ Defines the layout and components for the 'main' step.
 ```
 
 ### 4. `components/Hero.tsx`
+
 A simple React component used in the JSON above.
+
 ```tsx
 import { dispatcher } from 'lander-engine/core';
 
@@ -138,7 +146,7 @@ export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
     <section className="bg-[var(--color-background)] p-10 text-center">
       <h1 className="text-4xl font-bold text-[var(--color-primary)]">{title}</h1>
       <p className="mt-4 text-[var(--color-secondary)]">{subtitle}</p>
-      <button 
+      <button
         onClick={() => dispatcher.dispatch(onCtaClick)}
         className="mt-6 px-6 py-2 bg-[var(--color-primary)] text-white rounded"
       >
@@ -154,13 +162,16 @@ export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
 ## Configuration Details
 
 ### Cascading Priority
+
 The Resolver merges configurations in the following order (highest priority first):
+
 1.  **Variant + Device**: `campaign/variant_B/mobile/steps/main.json`
 2.  **Variant**: `campaign/variant_B/steps/main.json`
 3.  **Device**: `campaign/mobile/steps/main.json`
 4.  **Base**: `campaign/steps/main.json`
 
 ### Action Dispatcher
+
 You can define interactive behavior directly in your JSON sections:
 
 ```json
@@ -190,6 +201,7 @@ You can define interactive behavior directly in your JSON sections:
 ## Extensibility
 
 ### Plugin API
+
 Create a `lander.config.js` to hook into the build lifecycle:
 
 ```javascript
@@ -199,22 +211,23 @@ export default {
       name: 'my-plugin',
       onBeforeBuild: async (config) => {
         console.log('Preparing build for:', config.projectRoot);
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 ```
 
 ### Auto-Discovery
+
 Any component placed in `/components` is automatically available in your JSON by its filename. For example, `components/Header.tsx` can be used as `"component": "Header"`.
 
 ---
 
 ## Development
 
--   `npm run build`: Bundles the engine.
--   `npm run dev`: Starts the engine in watch mode.
--   `npm run typecheck`: Validates TypeScript interfaces.
+- `npm run build`: Bundles the engine.
+- `npm run dev`: Starts the engine in watch mode.
+- `npm run typecheck`: Validates TypeScript interfaces.
 
 ## Production / Release
 

@@ -49,10 +49,13 @@ export interface ModalConfig {
 
 export interface FlowConfig {
   initialStep: string;
-  steps: Record<string, {
-    type: 'normal' | 'popup';
-    next?: string;
-  }>;
+  steps: Record<
+    string,
+    {
+      type: 'normal' | 'popup';
+      next?: string;
+    }
+  >;
   modals?: Record<string, ModalConfig>;
 }
 

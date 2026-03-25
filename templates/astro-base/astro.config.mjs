@@ -8,10 +8,10 @@ export default defineConfig({
     tailwind(),
     react({
       experimentalReactChildren: true,
-    })
+    }),
   ],
   output: 'static',
   build: {
-    format: 'directory'
-  }
+    format: 'directory',
+  },
 });
