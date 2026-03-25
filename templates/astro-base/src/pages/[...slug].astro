@@ -11,42 +11,60 @@ export async function getStaticPaths() {
   const jsonConfigsDir = nodeEnvJsonDir || viteEnvJsonDir || '';
 
   if (!jsonConfigsDir) {
-    console.error('LANDER_JSON_CONFIGS_DIR is not defined');
+    console.error('❌ LANDER_JSON_CONFIGS_DIR is not defined');
     return [];
   }
 
-  const parser = new ConfigParser(jsonConfigsDir);
-  const campaigns = await parser.getCampaigns();
-  const paths = [];
-
-  for (const campaignId of campaigns) {
-    const base = await parser.loadCampaignBase(campaignId);
+  try {
+    const parser = new ConfigParser(jsonConfigsDir);
+    const campaigns = await parser.getCampaigns();
     
-    // Filter out popup steps - only generate routes for normal steps
-    // Popups are rendered as modals within normal steps
-    for (const [stepId, stepConfig] of Object.entries(base.steps)) {
-      const stepType = base.flow.steps[stepId]?.type;
-      
-      // Only create routes for normal steps, skip popups
-      if (stepType !== 'popup') {
-        paths.push({
-          params: { slug: `${campaignId}/${stepId}` },
-          props: { 
-            campaignId, 
-            stepId, 
-            config: resolveCascadingConfig(base, undefined, undefined, undefined), // Simplified for now
-            step: stepConfig,
-            flow: base.flow,
-            allSteps: base.steps,
-            modalConfigs: base.flow.modals || {},
-            layout: base.layout || {}
+    if (campaigns.length === 0) {
+      console.warn('⚠ No campaigns found in:', jsonConfigsDir);
+      return [];
+    }
+
+    const paths: any[] = [];
+
+    for (const campaignId of campaigns) {
+      try {
+        const base = await parser.loadCampaignBase(campaignId);
+        
+        // Generate routes for each normal (non-popup) step
+        for (const [stepId, stepConfig] of Object.entries(base.steps)) {
+          const stepType = base.flow.steps[stepId]?.type;
+          
+          // Only create routes for normal steps, skip popups
+          if (stepType !== 'popup') {
+            paths.push({
+              params: { slug: `${campaignId}/${stepId}` },
+              props: { 
+                campaignId, 
+                stepId, 
+                config: resolveCascadingConfig(base, undefined, undefined, undefined),
+                step: stepConfig,
+                flow: base.flow,
+                allSteps: base.steps,
+                modalConfigs: base.flow.modals || {},
+                layout: base.layout || {}
+              }
+            });
           }
-        });
+        }
+      } catch (error) {
+        console.error(`❌ Failed to load campaign '${campaignId}':`, error instanceof Error ? error.message : String(error));
       }
     }
-  }
 
-  return paths;
+    if (paths.length === 0) {
+      console.warn('⚠ No valid routes generated from campaigns');
+    }
+
+    return paths;
+  } catch (error) {
+    console.error('❌ Error generating static paths:', error instanceof Error ? error.message : String(error));
+    return [];
+  }
 }
 
 const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
@@ -67,9 +85,9 @@ for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
   }
 }
 
-// Map theme to CSS variables
+// Map theme colors to CSS variables
 const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
-  acc[`--color-${key}`] = val;
+  acc[`--color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`] = val;
   return acc;
 }, {} as Record<string, string>);
 
@@ -80,8 +98,8 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
-    <title>{step.seo?.title || config.seo.title}</title>
-    <meta name="description" content={step.seo?.description || config.seo.description} />
+    <meta name="description" content={step.seo?.description || config.seo.description || ''} />
+    <title>{step.seo?.title || config.seo.title || campaignId}</title>
   </head>
   <body style={themeVars}>
     {layout?.header && (
@@ -91,7 +109,7 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     )}
     
     <main id="lander-engine-root">
-      {step.sections.map((section: any) => (
+      {step.sections && step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
       ))}
     </main>
@@ -105,19 +123,17 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
 
     <script is:inline define:vars={{ initialState }}>
-      // This script runs before hydration to seed the state
-      // (Simplified for this example; in production, this would use the core's hydrateState)
-      
-      // Handle backdrop click to close modals
-      document.addEventListener('click', (e) => {
-        const modal = e.target.closest('.lander-modal');
-        if (modal && e.target === modal) {
-          const closeOnBackdrop = modal.dataset.closeOnBackdrop === 'true';
-          if (closeOnBackdrop) {
-            modal.classList.add('modal-hidden');
-          }
+      // Initialize state before hydration
+      // This script runs before any client-side code to seed the store
+      (function() {
+        try {
+          // State is available globally during hydration via the registry-manifest
+          window.__LANDER_INITIAL_STATE__ = initialState;
+          console.debug('[lander-engine] Initial state seeded:', initialState);
+        } catch (e) {
+          console.error('[lander-engine] Failed to initialize state:', e);
         }
-      });
+      })();
     </script>
   </body>
 </html>
