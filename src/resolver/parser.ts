@@ -435,4 +435,143 @@ export class ConfigParser {
 
     return { config, metadata };
   }
+
+  /**
+   * Detects available variants for a campaign by scanning directory structure.
+   * Looks for files or directories with variant suffixes like "-beta", "-variant-name".
+   * 
+   * @param campaignId Campaign directory name
+   * @returns Array of variant identifiers found
+   * 
+   * @example
+   * // If campaign has: flow.json, flow-beta.json, flow-v2.json, flow-beta-desktop.json
+   * // Returns: ['beta', 'v2', 'beta-desktop']
+   * // Variants are detected from file suffixes
+   */
+  async detectVariants(campaignId: string): Promise<string[]> {
+    try {
+      const campaignPath = path.join(this.baseDir, campaignId);
+      if (!(await fs.pathExists(campaignPath))) {
+        return [];
+      }
+
+      const variants = new Set<string>();
+
+      // Check all JSON files in campaign root for variant patterns
+      const jsonFiles = await glob('*.json', { cwd: campaignPath });
+
+      for (const file of jsonFiles) {
+        const baseName = path.basename(file, '.json');
+        // Look for suffixes like "flow-beta" (after the base name)
+        const baseNames = ["flow", "theme", "layout", "seo", "state"];
+        
+        for (const base of baseNames) {
+          if (baseName.startsWith(base + '-')) {
+            const suffix = baseName.substring(base.length + 1); // Remove "flow-" prefix
+            // Extract variant part (before any device suffix)
+            // Example: "beta" from "beta", "beta-mobile" → "beta"
+            const variant = suffix.split('-')[0];
+            if (variant && !['desktop', 'mobile', 'tablet', 'phone', 'pad'].includes(variant)) {
+              variants.add(variant);
+            }
+          }
+        }
+      }
+
+      return Array.from(variants).sort();
+    } catch (error) {
+      console.warn(`Failed to detect variants for campaign '${campaignId}':`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Detects available devices for a campaign by scanning file/directory names.
+   * Looks for known device suffixes like "-mobile", "-desktop", "-tablet".
+   * 
+   * @param campaignId Campaign directory name
+   * @returns Array of device identifiers found
+   * 
+   * @example
+   * // If campaign has: flow.desktop.json, flow.mobile.json, flow-beta-tablet.json
+   * // Returns: ['desktop', 'mobile', 'tablet']
+   */
+  async detectDevices(campaignId: string): Promise<string[]> {
+    try {
+      const campaignPath = path.join(this.baseDir, campaignId);
+      if (!(await fs.pathExists(campaignPath))) {
+        return [];
+      }
+
+      const devices = new Set<string>();
+      const knownDevices = ['mobile', 'desktop', 'tablet', 'phone', 'pad'];
+
+      // Check all JSON files for device patterns
+      const jsonFiles = await glob('*.json', { cwd: campaignPath });
+
+      for (const file of jsonFiles) {
+        const baseName = path.basename(file, '.json');
+        
+        for (const device of knownDevices) {
+          // Match patterns like "flow.desktop" or "flow-beta-mobile"
+          if (baseName.endsWith(`.${device}`) || baseName.endsWith(`-${device}`)) {
+            devices.add(device);
+          }
+        }
+      }
+
+      return Array.from(devices).sort();
+    } catch (error) {
+      console.warn(`Failed to detect devices for campaign '${campaignId}':`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Gets all available variant/device combinations for a campaign.
+   * Useful for generating all possible static routes.
+   * 
+   * @param campaignId Campaign directory name
+   * @returns Array of {variant?, device?} combinations
+   * 
+   * @example
+   * // If campaign has variants ['beta', 'v2'] and devices ['mobile', 'desktop']
+   * // Returns: 
+   * // [
+   * //   {},                              (base)
+   * //   {device: 'mobile'},
+   * //   {device: 'desktop'},
+   * //   {variant: 'beta'},
+   * //   {variant: 'beta', device: 'mobile'},
+   * //   {variant: 'beta', device: 'desktop'},
+   * //   ... etc
+   * // ]
+   */
+  async getVariantDeviceCombinations(campaignId: string): Promise<ResolutionParams[]> {
+    const variants = await this.detectVariants(campaignId);
+    const devices = await this.detectDevices(campaignId);
+
+    const combinations: ResolutionParams[] = [
+      {}, // Base with no overrides
+    ];
+
+    // Add device-only combinations
+    for (const device of devices) {
+      combinations.push({ device });
+    }
+
+    // Add variant-only combinations
+    for (const variant of variants) {
+      combinations.push({ variant });
+    }
+
+    // Add variant+device combinations
+    for (const variant of variants) {
+      for (const device of devices) {
+        combinations.push({ variant, device });
+      }
+    }
+
+    return combinations;
+  }
 }

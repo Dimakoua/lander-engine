@@ -96,30 +96,22 @@ export function getOverridePaths(
   params: ResolutionParams
 ): { device?: string; variant?: string; variantDevice?: string } {
   const result: { device?: string; variant?: string; variantDevice?: string } = {};
+  const baseName = baseFileName.replace(/\.json$/i, '');
 
   // Generate device override path
   if (params.device) {
-    const ext = path.extname(baseFileName);
-    const base = path.basename(baseFileName, ext);
-    result.device = `${base}.${params.device}${ext}`;
+    result.device = `${baseName}-${params.device}.json`;
   }
 
   // Generate variant override path
   if (params.variant) {
-    const ext = path.extname(baseFileName);
-    const base = path.basename(baseFileName, ext);
-    result.variant = `${base}-${params.variant}${ext}`;
+    result.variant = `${baseName}-${params.variant}.json`;
   }
 
-  // Generate variant+device override path
+  // Generate variant+device override path (highest priority)
   if (params.variant && params.device) {
-    const ext = path.extname(baseFileName);
-    const base = path.basename(baseFileName, ext);
-    result.variantDevice = `${base}-${params.variant}-${params.device}${ext}`;
+    result.variantDevice = `${baseName}-${params.variant}-${params.device}.json`;
   }
 
   return result;
 }
-
-// Import path for getOverridePaths function
-import path from 'path';
