@@ -266,8 +266,8 @@ describe('Action Dispatcher', () => {
 
   describe('Error Handling', () => {
     it('should handle unknown action type', async () => {
-      const action = {
-        type: 'unknownType' as any,
+      const action: any = {
+        type: 'unknownType',
         payload: {},
       };
 
