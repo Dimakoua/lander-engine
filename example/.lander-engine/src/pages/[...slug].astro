@@ -22,6 +22,14 @@ export async function getStaticPaths() {
   for (const campaignId of campaigns) {
     const base = await parser.loadCampaignBase(campaignId);
     
+    // Load mobile overrides if they exist
+    let mobileOverrides = {};
+    try {
+      mobileOverrides = await parser.loadOverrides(campaignId, 'mobile');
+    } catch (e) {
+      // Mobile overrides are optional
+    }
+    
     // Filter out popup steps - only generate routes for normal steps
     // Popups are rendered as modals within normal steps
     for (const [stepId, stepConfig] of Object.entries(base.steps)) {
@@ -29,12 +37,16 @@ export async function getStaticPaths() {
       
       // Only create routes for normal steps, skip popups
       if (stepType !== 'popup') {
+        // Desktop version
         paths.push({
           params: { slug: `${campaignId}/${stepId}` },
           props: { 
             campaignId, 
             stepId, 
-            config: resolveCascadingConfig(base, undefined, undefined, undefined), // Simplified for now
+            isMobile: false,
+            base,
+            mobileOverrides,
+            config: resolveCascadingConfig(base, undefined, undefined, undefined),
             step: stepConfig,
             flow: base.flow,
             allSteps: base.steps,
@@ -42,6 +54,26 @@ export async function getStaticPaths() {
             layout: base.layout || {}
           }
         });
+        
+        // Mobile version (only if mobile overrides exist)
+        if (Object.keys(mobileOverrides).length > 0) {
+          paths.push({
+            params: { slug: `${campaignId}/${stepId}.mobile` },
+            props: { 
+              campaignId, 
+              stepId, 
+              isMobile: true,
+              base,
+              mobileOverrides,
+              config: resolveCascadingConfig(base, mobileOverrides as any, undefined, undefined),
+              step: mobileOverrides.steps?.[stepId] ? { ...stepConfig, ...mobileOverrides.steps[stepId] } : stepConfig,
+              flow: mobileOverrides.flow ? { ...base.flow, ...mobileOverrides.flow } : base.flow,
+              allSteps: base.steps,
+              modalConfigs: mobileOverrides.flow?.modals ? { ...base.flow.modals, ...mobileOverrides.flow.modals } : (base.flow.modals || {}),
+              layout: mobileOverrides.layout ? { ...base.layout, ...mobileOverrides.layout } : (base.layout || {})
+            }
+          });
+        }
       }
     }
   }
@@ -49,12 +81,13 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
+const { isMobile, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
 
 // Prepare initial state
 const initialState = {
   ...config.state,
   ...step.state,
+  isMobile, // Include device type in state for reactive components
   campaignId,
   stepId,
 };
@@ -103,6 +136,53 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     )}
 
     <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
+
+    <script is:inline>
+      // Client-side device detection and redirect
+      function isMobileDevice() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const mobilePattern = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+        return mobilePattern.test(userAgent);
+      }
+
+      function shouldRedirect() {
+        const currentPath = window.location.pathname;
+        const isMobileDevice_ = isMobileDevice();
+        const isOnMobilePage = currentPath.includes('.mobile');
+
+        // Don't redirect in dev mode with query string
+        if (window.location.search.includes('no-redirect')) {
+          return false;
+        }
+
+        // If on desktop but should be on mobile
+        if (!isOnMobilePage && isMobileDevice_) {
+          return true;
+        }
+
+        // If on mobile but should be on desktop
+        if (isOnMobilePage && !isMobileDevice_) {
+          return true;
+        }
+
+        return false;
+      }
+
+      if (shouldRedirect()) {
+        const currentPath = window.location.pathname;
+        let redirectPath = currentPath;
+
+        if (currentPath.includes('.mobile')) {
+          // Remove .mobile from the path
+          redirectPath = currentPath.replace('.mobile', '');
+        } else {
+          // Add .mobile to the path
+          redirectPath = currentPath.replace(/\/$/, '') + '.mobile';
+        }
+
+        window.location.href = redirectPath + window.location.search;
+      }
+    </script>
 
     <script is:inline define:vars={{ initialState }}>
       // This script runs before hydration to seed the state

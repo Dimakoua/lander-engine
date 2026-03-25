@@ -5,15 +5,6 @@ import '../registry-manifest';
 import Registry from '../Registry.astro';
 import ModalsContainer from '../ModalsContainer.astro';
 
-/**
- * Detects device type from user-agent header
- */
-function detectDeviceType(userAgent: string): 'mobile' | 'desktop' {
-  // Mobile user agents
-  const mobilePattern = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-  return mobilePattern.test(userAgent) ? 'mobile' : 'desktop';
-}
-
 export async function getStaticPaths() {
   const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
   const viteEnvJsonDir = import.meta.env.LANDER_JSON_CONFIGS_DIR;
@@ -122,29 +113,76 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
-    <title>{finalStep.seo?.title || finalConfig.seo.title}</title>
-    <meta name="description" content={finalStep.seo?.description || finalConfig.seo.description} />
+    <title>{step.seo?.title || config.seo.title}</title>
+    <meta name="description" content={step.seo?.description || config.seo.description} />
   </head>
   <body style={themeVars}>
-    {finalLayout?.header && (
+    {layout?.header && (
       <header id="lander-header">
-        <Registry component={finalLayout.header.component} props={finalLayout.header.props} />
+        <Registry component={layout.header.component} props={layout.header.props} />
       </header>
     )}
     
     <main id="lander-engine-root">
-      {finalStep.sections.map((section: any) => (
+      {step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
       ))}
     </main>
 
-    {finalLayout?.footer && (
+    {layout?.footer && (
       <footer id="lander-footer">
-        <Registry component={finalLayout.footer.component} props={finalLayout.footer.props} />
+        <Registry component={layout.footer.component} props={layout.footer.props} />
       </footer>
     )}
 
-    <ModalsContainer popups={availablePopups} modalConfigs={finalModalConfigs} />
+    <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
+
+    <script is:inline>
+      // Client-side device detection and redirect
+      function isMobileDevice() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const mobilePattern = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+        return mobilePattern.test(userAgent);
+      }
+
+      function shouldRedirect() {
+        const currentPath = window.location.pathname;
+        const isMobileDevice_ = isMobileDevice();
+        const isOnMobilePage = currentPath.includes('.mobile');
+
+        // Don't redirect in dev mode with query string
+        if (window.location.search.includes('no-redirect')) {
+          return false;
+        }
+
+        // If on desktop but should be on mobile
+        if (!isOnMobilePage && isMobileDevice_) {
+          return true;
+        }
+
+        // If on mobile but should be on desktop
+        if (isOnMobilePage && !isMobileDevice_) {
+          return true;
+        }
+
+        return false;
+      }
+
+      if (shouldRedirect()) {
+        const currentPath = window.location.pathname;
+        let redirectPath = currentPath;
+
+        if (currentPath.includes('.mobile')) {
+          // Remove .mobile from the path
+          redirectPath = currentPath.replace('.mobile', '');
+        } else {
+          // Add .mobile to the path
+          redirectPath = currentPath.replace(/\/$/, '') + '.mobile';
+        }
+
+        window.location.href = redirectPath + window.location.search;
+      }
+    </script>
 
     <script is:inline define:vars={{ initialState }}>
       // This script runs before hydration to seed the state
