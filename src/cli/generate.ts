@@ -38,9 +38,7 @@ export class WorkspaceGenerator {
 
       console.log('✓ Workspace generated successfully');
     } catch (error) {
-      throw new Error(
-        `Failed to generate workspace: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new Error(`Failed to generate workspace: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -71,10 +69,7 @@ export class WorkspaceGenerator {
     const dir = path.dirname(filePath);
     if (dir && dir !== '.') {
       // Join directory parts with dash, normalize separators
-      const dirParts = dir
-        .replace(/\\/g, '/')
-        .split('/')
-        .filter((p) => p);
+      const dirParts = dir.replace(/\\/g, '/').split('/').filter(p => p);
       name = [...dirParts, name].join('-');
     }
     return name;
@@ -88,7 +83,10 @@ export class WorkspaceGenerator {
       this.config.projectRoot,
       this.config.componentsDir || 'components'
     );
-    const actionsDir = path.resolve(this.config.projectRoot, this.config.actionsDir || 'actions');
+    const actionsDir = path.resolve(
+      this.config.projectRoot,
+      this.config.actionsDir || 'actions'
+    );
 
     // Check if directories exist (graceful fallback)
     const componentDirExists = await fs.pathExists(componentsDir);
@@ -97,8 +95,8 @@ export class WorkspaceGenerator {
     if (!componentDirExists && !actionsDirExists) {
       console.warn(
         `⚠ No components or actions directories found. Expected at:\n` +
-          `  - ${componentsDir}\n` +
-          `  - ${actionsDir}`
+        `  - ${componentsDir}\n` +
+        `  - ${actionsDir}`
       );
     }
 
@@ -129,7 +127,10 @@ export class WorkspaceGenerator {
       manifestContent += `// Component Registration\n`;
       componentFiles.forEach((file, index) => {
         const name = this.getComponentName(file);
-        const importPath = this.getImportPath(path.resolve(componentsDir, file), componentsDir);
+        const importPath = this.getImportPath(
+          path.resolve(componentsDir, file),
+          componentsDir
+        );
         manifestContent += `import Component_${index} from '${importPath}';\n`;
       });
       manifestContent += `\nregistry.registerComponents({\n`;
@@ -143,7 +144,10 @@ export class WorkspaceGenerator {
     if (actionFiles.length > 0) {
       manifestContent += `// Action Registration\n`;
       actionFiles.forEach((file, index) => {
-        const importPath = this.getImportPath(path.resolve(actionsDir, file), actionsDir);
+        const importPath = this.getImportPath(
+          path.resolve(actionsDir, file),
+          actionsDir
+        );
         manifestContent += `import * as Actions_${index} from '${importPath}';\n`;
       });
       manifestContent += `\nconst actionHandlers = Object.fromEntries(\n`;
@@ -184,8 +188,6 @@ if (!Component) {
     await fs.writeFile(manifestPath, manifestContent);
     await fs.writeFile(astroRegistryPath, astroRegistryContent);
 
-    console.log(
-      `✓ Registry manifest generated (${componentFiles.length} components, ${actionFiles.length} actions)`
-    );
+    console.log(`✓ Registry manifest generated (${componentFiles.length} components, ${actionFiles.length} actions)`);
   }
 }

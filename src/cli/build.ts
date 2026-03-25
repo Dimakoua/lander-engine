@@ -20,7 +20,7 @@ export class Builder {
       try {
         // Resolve astro binary from project's node_modules
         const astroBin = path.resolve(this.config.projectRoot, 'node_modules/.bin/astro');
-
+        
         // Resolve JSON configs directory from the project root
         const jsonConfigsDir = this.config.jsonConfigsDir
           ? path.resolve(this.config.projectRoot, this.config.jsonConfigsDir)
@@ -50,8 +50,8 @@ export class Builder {
           reject(
             new Error(
               `Failed to spawn Astro process: ${error.message}\n` +
-                `Astro binary not found at: ${astroBin}\n` +
-                `Make sure Astro is installed: npm install astro`
+              `Astro binary not found at: ${astroBin}\n` +
+              `Make sure Astro is installed: npm install astro`
             )
           );
         });
@@ -64,7 +64,7 @@ export class Builder {
             reject(
               new Error(
                 `Astro ${command} failed with exit code ${code}\n` +
-                  `Try running 'npm install' to ensure all dependencies are installed.`
+                `Try running 'npm install' to ensure all dependencies are installed.`
               )
             );
           }

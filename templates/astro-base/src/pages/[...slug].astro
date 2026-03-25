@@ -1,22 +1,10 @@
 ---
-import { ConfigParser } from 'lander-engine/resolver';
+import { ConfigParser, resolveCascadingConfig } from 'lander-engine/resolver';
+import { hydrateState } from 'lander-engine/core';
 import '../registry-manifest'; 
 import Registry from '../Registry.astro';
 import ModalsContainer from '../ModalsContainer.astro';
 
-/**
- * Generates static routes for all combinations of:
- * - Campaigns
- * - Steps  
- * - A/B Variants (persisted via URL query param)
- * - Device Types (persisted via URL query param)
- * 
- * Variants persist across step navigation via URL query parameters:
- * - /campaign/step (base)
- * - /campaign/step?variant=beta (A/B variant)
- * - /campaign/step?device=mobile (device override)
- * - /campaign/step?variant=beta&device=mobile (both)
- */
 export async function getStaticPaths() {
   const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
   const viteEnvJsonDir = import.meta.env.LANDER_JSON_CONFIGS_DIR;
@@ -40,80 +28,29 @@ export async function getStaticPaths() {
 
     for (const campaignId of campaigns) {
       try {
-        // Load base campaign
         const base = await parser.loadCampaignBase(campaignId);
         
-        // Detect available variants and devices
-        const variants = await parser.detectVariants(campaignId);
-        const devices = await parser.detectDevices(campaignId);
-        
         // Generate routes for each normal (non-popup) step
-        for (const [stepId, _stepConfig] of Object.entries(base.steps)) {
+        for (const [stepId, stepConfig] of Object.entries(base.steps)) {
           const stepType = base.flow.steps[stepId]?.type;
           
           // Only create routes for normal steps, skip popups
           if (stepType !== 'popup') {
-            // Base route (no variant or device)
             paths.push({
               params: { slug: `${campaignId}/${stepId}` },
               props: { 
                 campaignId, 
                 stepId, 
-                variant: undefined,
-                device: undefined,
+                config: resolveCascadingConfig(base, undefined, undefined, undefined),
+                step: stepConfig,
+                flow: base.flow,
+                allSteps: base.steps,
+                modalConfigs: base.flow.modals || {},
+                layout: base.layout || {}
               }
             });
-
-            // Device-specific routes only
-            for (const device of devices) {
-              paths.push({
-                params: { slug: `${campaignId}/${stepId}` },
-                props: { 
-                  campaignId, 
-                  stepId, 
-                  variant: undefined,
-                  device,
-                }
-              });
-            }
-
-            // Variant-specific routes (includes all device combinations)
-            for (const variant of variants) {
-              // Variant without device
-              paths.push({
-                params: { slug: `${campaignId}/${stepId}` },
-                props: { 
-                  campaignId, 
-                  stepId, 
-                  variant,
-                  device: undefined,
-                }
-              });
-
-              // Variant + device combinations
-              for (const device of devices) {
-                paths.push({
-                  params: { slug: `${campaignId}/${stepId}` },
-                  props: { 
-                    campaignId, 
-                    stepId, 
-                    variant,
-                    device,
-                  }
-                });
-              }
-            }
           }
         }
-
-        // Log summary
-        const normalSteps = Object.values(base.steps).filter((_, idx) => {
-          const stepId = Object.keys(base.steps)[idx];
-          return base.flow.steps[stepId]?.type === 'normal';
-        }).length;
-        const variantText = variants.length > 0 ? ` + ${variants.length} variants` : '';
-        const deviceText = devices.length > 0 ? ` + ${devices.length} devices` : '';
-        console.log(`✓ Campaign '${campaignId}': ${normalSteps} steps${variantText}${deviceText}`);
       } catch (error) {
         console.error(`❌ Failed to load campaign '${campaignId}':`, error instanceof Error ? error.message : String(error));
       }
@@ -121,8 +58,6 @@ export async function getStaticPaths() {
 
     if (paths.length === 0) {
       console.warn('⚠ No valid routes generated from campaigns');
-    } else {
-      console.log(`✓ Generated ${paths.length} total static routes`);
     }
 
     return paths;
@@ -132,71 +67,20 @@ export async function getStaticPaths() {
   }
 }
 
-interface Props {
-  campaignId: string;
-  stepId: string;
-  variant?: string;
-  device?: string;
-}
-
-const { campaignId, stepId, variant, device } = Astro.props as Props;
-
-const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
-const viteEnvJsonDir = import.meta.env.LANDER_JSON_CONFIGS_DIR;
-const jsonConfigsDir = nodeEnvJsonDir || viteEnvJsonDir || '';
-
-if (!jsonConfigsDir) {
-  throw new Error('LANDER_JSON_CONFIGS_DIR not configured');
-}
-
-const parser = new ConfigParser(jsonConfigsDir);
-
-// Load campaign config with cascading overrides
-// This applies variant/device overrides from files like:
-//   theme.json (base)
-//   theme-beta.json (variant)
-//   theme.mobile.json (device)
-//   theme-beta.mobile.json (variant+device)
-const { config, metadata } = await parser.loadCampaignWithOverrides(campaignId, {
-  variant,
-  device,
-});
-
-// Validate step exists and is not a popup
-const stepExists = config.steps[stepId];
-const isPopup = config.flow.steps[stepId]?.type === 'popup';
-
-if (!stepExists) {
-  throw new Error(`Step '${stepId}' not found in campaign '${campaignId}'`);
-}
-
-if (isPopup) {
-  throw new Error(`Step '${stepId}' is a popup and cannot be accessed directly`);
-}
-
-const step = config.steps[stepId];
+const { config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
 
 // Prepare initial state
-// CRITICAL: Variant and device are persisted in state across step navigation
 const initialState = {
   ...config.state,
   ...step.state,
   campaignId,
   stepId,
-  variant: variant || null,        // Persist variant across navigation
-  device: device || null,          // Persist device across navigation
 };
-
-// Build query string for propagating variant/device to next steps
-const queryParams = new URLSearchParams();
-if (variant) queryParams.append('variant', variant);
-if (device) queryParams.append('device', device);
-const queryString = queryParams.toString();
 
 // Collect available popups for this step (popups that can be triggered from this step)
 const availablePopups: Record<string, any> = {};
-for (const [popupId, popupStepConfig] of Object.entries(config.steps)) {
-  if (config.flow.steps[popupId]?.type === 'popup') {
+for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
+  if (flow.steps[popupId]?.type === 'popup') {
     availablePopups[popupId] = popupStepConfig;
   }
 }
@@ -207,14 +91,6 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
   return acc;
 }, {} as Record<string, string>);
 
-// Add metadata variables
-if (metadata.variant) {
-  themeVars['--variant'] = metadata.variant;
-}
-if (metadata.device) {
-  themeVars['--device'] = metadata.device;
-}
-
 ---
 
 <html lang="en">
@@ -224,87 +100,40 @@ if (metadata.device) {
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={step.seo?.description || config.seo.description || ''} />
     <title>{step.seo?.title || config.seo.title || campaignId}</title>
-    
-    <!-- Analytics: Variant and device tracking -->
-    {metadata.variant && <meta name="lander:variant" content={metadata.variant} />}
-    {metadata.device && <meta name="lander:device" content={metadata.device} />}
   </head>
   <body style={themeVars}>
-    {config.layout?.header && (
+    {layout?.header && (
       <header id="lander-header">
-        <Registry component={config.layout.header.component} props={config.layout.header.props} />
+        <Registry component={layout.header.component} props={layout.header.props} />
       </header>
     )}
     
-    <main 
-      id="lander-engine-root" 
-      data-campaign={campaignId} 
-      data-step={stepId} 
-      data-variant={variant || 'base'}
-      data-device={device || 'base'}
-    >
+    <main id="lander-engine-root">
       {step.sections && step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
       ))}
     </main>
 
-    {config.layout?.footer && (
+    {layout?.footer && (
       <footer id="lander-footer">
-        <Registry component={config.layout.footer.component} props={config.layout.footer.props} />
+        <Registry component={layout.footer.component} props={layout.footer.props} />
       </footer>
     )}
 
-    <ModalsContainer popups={availablePopups} modalConfigs={config.flow.modals || {}} />
+    <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
 
-    <script is:inline define:vars={{ initialState, campaignId, stepId, variant, device, queryString }}>
-      /**
-       * Initialize Lander Engine state and globals
-       * This runs BEFORE any Islands hydration
-       */
+    <script is:inline define:vars={{ initialState }}>
+      // Initialize state before hydration
+      // This script runs before any client-side code to seed the store
       (function() {
         try {
-          // Store in window for Island components to access
+          // State is available globally during hydration via the registry-manifest
           window.__LANDER_INITIAL_STATE__ = initialState;
-          window.__LANDER_CAMPAIGN_ID__ = campaignId;
-          window.__LANDER_STEP_ID__ = stepId;
-          window.__LANDER_VARIANT__ = variant;
-          window.__LANDER_DEVICE__ = device;
-          window.__LANDER_QUERY_STRING__ = queryString;
-          
-          // Analytics tracking for A/B testing
-          if (variant) {
-            console.debug('[lander-engine] A/B Variant assigned:', variant);
-          }
-          
-          console.debug('[lander-engine] Initialized', {
-            campaign: campaignId,
-            step: stepId,
-            variant: variant || 'base',
-            device: device || 'base'
-          });
+          console.debug('[lander-engine] Initial state seeded:', initialState);
         } catch (e) {
-          console.error('[lander-engine] Failed to initialize:', e);
+          console.error('[lander-engine] Failed to initialize state:', e);
         }
       })();
-
-      /**
-       * Helper to propagate variant/device across navigation
-       * Use this in your components when creating navigation links
-       */
-      window.__landerGetNavLink = function(stepId, campaignId) {
-        campaignId = campaignId || window.__LANDER_CAMPAIGN_ID__;
-        const params = new URLSearchParams();
-        
-        if (window.__LANDER_VARIANT__) {
-          params.append('variant', window.__LANDER_VARIANT__);
-        }
-        if (window.__LANDER_DEVICE__) {
-          params.append('device', window.__LANDER_DEVICE__);
-        }
-        
-        const query = params.toString();
-        return `/${campaignId}/${stepId}${query ? '?' + query : ''}`;
-      };
     </script>
   </body>
 </html>
