@@ -8,7 +8,13 @@ import {
   SEOConfig, 
   StepConfig 
 } from '@/types/schema';
-import { deepMerge, resolveCascadingConfig, ResolutionParams, DeviceType } from './cascade';
+import { 
+  deepMerge, 
+  resolveCascadingConfig, 
+  resolveDevice,
+  ResolutionParams, 
+  DeviceDetectionOptions 
+} from './cascade';
 
 export interface CampaignConfig {
   campaignId: string;
@@ -23,6 +29,7 @@ export interface CampaignConfig {
 export interface OverrideLoadingMetadata {
   variant?: string;
   device?: string;
+  autoDetected?: boolean; // Whether device was auto-detected
   appliedOverrides: {
     device?: boolean;
     variant?: boolean;
@@ -243,14 +250,29 @@ export class ConfigParser {
    * 3. Variant override (e.g., flow-beta.json)
    * 4. Variant+Device override (e.g., flow-beta-desktop.json) - highest priority
    * 
+   * Supports automatic device detection if device is not explicitly specified.
+   * 
    * @param campaignId - Campaign folder name
    * @param params - Optional device/variant parameters
+   * @param detectionOptions - Optional device detection options for auto-detection
    * @throws Error if mandatory config files are missing
    */
   async loadCampaignWithOverrides(
     campaignId: string,
-    params?: ResolutionParams
+    params?: ResolutionParams,
+    detectionOptions?: DeviceDetectionOptions
   ): Promise<{ config: CampaignConfig; metadata: OverrideLoadingMetadata }> {
+    // Auto-detect device if enabled and not explicitly provided
+    const device = resolveDevice(params, detectionOptions);
+    const autoDetected = !params?.device && device !== undefined;
+    
+    // Create effective params with detected device
+    const effectiveParams: ResolutionParams = {
+      ...params,
+      device,
+      autoDetect: params?.autoDetect !== false,
+    };
+
     // Load base configs
     const [flow, theme, layout, seo, state] = await Promise.all([
       this.readJson<FlowConfig>(`${campaignId}/flow.json`),
@@ -267,8 +289,9 @@ export class ConfigParser {
     if (!theme.colors) throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
 
     const metadata: OverrideLoadingMetadata = {
-      variant: params?.variant,
-      device: params?.device,
+      variant: effectiveParams.variant,
+      device: effectiveParams.device as string | undefined,
+      autoDetected,
       appliedOverrides: {
         device: false,
         variant: false,
@@ -282,32 +305,32 @@ export class ConfigParser {
     let resolvedSeo = seo || { title: campaignId };
     let resolvedState = state || {};
 
-    // Apply device overrides if specified
-    if (params?.device) {
+    // Apply device overrides if specified or auto-detected
+    if (effectiveParams.device) {
       const deviceFlow = await this.loadConfigFile<Partial<FlowConfig>>(
         campaignId,
         'flow.json',
-        `.${params.device}`
+        `.${effectiveParams.device}`
       );
       const deviceTheme = await this.loadConfigFile<Partial<ThemeConfig>>(
         campaignId,
         'theme.json',
-        `.${params.device}`
+        `.${effectiveParams.device}`
       );
       const deviceLayout = await this.loadConfigFile<Partial<LayoutConfig>>(
         campaignId,
         'layout.json',
-        `.${params.device}`
+        `.${effectiveParams.device}`
       );
       const deviceSeo = await this.loadConfigFile<Partial<SEOConfig>>(
         campaignId,
         'seo.json',
-        `.${params.device}`
+        `.${effectiveParams.device}`
       );
       const deviceState = await this.loadConfigFile<Record<string, any>>(
         campaignId,
         'state.json',
-        `.${params.device}`
+        `.${effectiveParams.device}`
       );
 
       if (deviceFlow) {
@@ -329,31 +352,31 @@ export class ConfigParser {
     }
 
     // Apply variant overrides if specified
-    if (params?.variant) {
+    if (effectiveParams.variant) {
       const variantFlow = await this.loadConfigFile<Partial<FlowConfig>>(
         campaignId,
         'flow.json',
-        `-${params.variant}`
+        `-${effectiveParams.variant}`
       );
       const variantTheme = await this.loadConfigFile<Partial<ThemeConfig>>(
         campaignId,
         'theme.json',
-        `-${params.variant}`
+        `-${effectiveParams.variant}`
       );
       const variantLayout = await this.loadConfigFile<Partial<LayoutConfig>>(
         campaignId,
         'layout.json',
-        `-${params.variant}`
+        `-${effectiveParams.variant}`
       );
       const variantSeo = await this.loadConfigFile<Partial<SEOConfig>>(
         campaignId,
         'seo.json',
-        `-${params.variant}`
+        `-${effectiveParams.variant}`
       );
       const variantState = await this.loadConfigFile<Record<string, any>>(
         campaignId,
         'state.json',
-        `-${params.variant}`
+        `-${effectiveParams.variant}`
       );
 
       if (variantFlow) {
@@ -375,31 +398,31 @@ export class ConfigParser {
     }
 
     // Apply variant+device overrides if specified (highest priority)
-    if (params?.variant && params?.device) {
+    if (effectiveParams.variant && effectiveParams.device) {
       const variantDeviceFlow = await this.loadConfigFile<Partial<FlowConfig>>(
         campaignId,
         'flow.json',
-        `-${params.variant}-${params.device}`
+        `-${effectiveParams.variant}-${effectiveParams.device}`
       );
       const variantDeviceTheme = await this.loadConfigFile<Partial<ThemeConfig>>(
         campaignId,
         'theme.json',
-        `-${params.variant}-${params.device}`
+        `-${effectiveParams.variant}-${effectiveParams.device}`
       );
       const variantDeviceLayout = await this.loadConfigFile<Partial<LayoutConfig>>(
         campaignId,
         'layout.json',
-        `-${params.variant}-${params.device}`
+        `-${effectiveParams.variant}-${effectiveParams.device}`
       );
       const variantDeviceSeo = await this.loadConfigFile<Partial<SEOConfig>>(
         campaignId,
         'seo.json',
-        `-${params.variant}-${params.device}`
+        `-${effectiveParams.variant}-${effectiveParams.device}`
       );
       const variantDeviceState = await this.loadConfigFile<Record<string, any>>(
         campaignId,
         'state.json',
-        `-${params.variant}-${params.device}`
+        `-${effectiveParams.variant}-${effectiveParams.device}`
       );
 
       if (variantDeviceFlow) {
@@ -421,7 +444,7 @@ export class ConfigParser {
     }
 
     // Load steps with cascading overrides
-    const steps = await this.loadStepsWithOverrides(campaignId, params || {});
+    const steps = await this.loadStepsWithOverrides(campaignId, effectiveParams || {});
 
     const config: CampaignConfig = {
       campaignId,
