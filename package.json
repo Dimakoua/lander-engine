@@ -2,28 +2,6 @@
   "name": "lander-engine",
   "version": "0.1.0",
   "description": "Configuration-driven JAMstack landing page meta-framework",
-  "license": "MIT",
-  "author": "Lander Engine Contributors",
-  "homepage": "https://github.com/yourusername/lander-engine",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/lander-engine.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/lander-engine/issues"
-  },
-  "keywords": [
-    "astro",
-    "landing-pages",
-    "jamstack",
-    "a-b-testing",
-    "ab-testing",
-    "configuration-driven",
-    "meta-framework",
-    "zero-js",
-    "static-generation",
-    "view-transitions"
-  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -31,12 +9,6 @@
   "bin": {
     "lander": "./dist/cli/index.cjs"
   },
-  "files": [
-    "dist/",
-    "templates/",
-    "LICENSE",
-    "CHANGELOG.md"
-  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -62,17 +34,11 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "lint": "eslint src/**",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "astro": "^5.18.1",
+    "astro": "^4.5.0",
     "cac": "^6.7.14",
     "clsx": "^2.1.0",
     "fast-glob": "^3.3.2",
@@ -83,17 +49,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.11.24",
-    "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
-    "@vitest/coverage-v8": "^1.0.4",
-    "eslint": "^8.57.0",
-    "prettier": "^3.2.5",
     "tsup": "^8.0.2",
-    "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,tsx}": "eslint --fix",
-    "**/*.{ts,tsx,md,json,js}": "prettier --write"
+    "typescript": "^5.3.3"
   }
 }
