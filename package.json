@@ -38,7 +38,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "astro": "^4.5.0",
+    "astro": "^5.18.1",
     "cac": "^6.7.14",
     "clsx": "^2.1.0",
     "fast-glob": "^3.3.2",
