@@ -179,6 +179,11 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
     <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
 
+    {/* Populate the client-side registry with custom action handlers */}
+    <script>
+      import '../registry-manifest';
+    </script>
+
     <script is:inline>
       // Client-side device detection and redirect
       function isMobileDevice() {
