@@ -39,6 +39,21 @@ export class ConfigParser {
   }
 
   /**
+   * Scans for A/B variant subdirectories within a campaign.
+   * Variants are any subdirectories that are not reserved names ('mobile', 'steps').
+   */
+  async getVariants(campaignId: string): Promise<string[]> {
+    const campaignPath = path.join(this.baseDir, campaignId);
+    const folders = await glob('*', {
+      cwd: campaignPath,
+      onlyDirectories: true,
+      deep: 1,
+    });
+    const reserved = new Set(['mobile', 'steps']);
+    return folders.filter(folder => !reserved.has(folder) && !folder.startsWith('.'));
+  }
+
+  /**
    * Reads and parses a JSON file with descriptive error handling.
    */
   private async readJson<T>(filePath: string): Promise<T | null> {

@@ -52,6 +52,20 @@ var ConfigParser = class {
     return folders;
   }
   /**
+   * Scans for A/B variant subdirectories within a campaign.
+   * Variants are any subdirectories that are not reserved names ('mobile', 'steps').
+   */
+  async getVariants(campaignId) {
+    const campaignPath = _path2.default.join(this.baseDir, campaignId);
+    const folders = await _fastglob2.default.call(void 0, "*", {
+      cwd: campaignPath,
+      onlyDirectories: true,
+      deep: 1
+    });
+    const reserved = /* @__PURE__ */ new Set(["mobile", "steps"]);
+    return folders.filter((folder) => !reserved.has(folder) && !folder.startsWith("."));
+  }
+  /**
    * Reads and parses a JSON file with descriptive error handling.
    */
   async readJson(filePath) {
@@ -143,4 +157,4 @@ var ConfigParser = class {
 
 
 exports.deepMerge = deepMerge; exports.resolveCascadingConfig = resolveCascadingConfig; exports.ConfigParser = ConfigParser;
-//# sourceMappingURL=chunk-F23U6GWY.cjs.map
+//# sourceMappingURL=chunk-E2OP5JMF.cjs.map

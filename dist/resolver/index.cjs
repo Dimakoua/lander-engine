@@ -2,10 +2,10 @@
 
 
 
-var _chunkF23U6GWYcjs = require('../chunk-F23U6GWY.cjs');
+var _chunkE2OP5JMFcjs = require('../chunk-E2OP5JMF.cjs');
 
 
 
 
-exports.ConfigParser = _chunkF23U6GWYcjs.ConfigParser; exports.deepMerge = _chunkF23U6GWYcjs.deepMerge; exports.resolveCascadingConfig = _chunkF23U6GWYcjs.resolveCascadingConfig;
+exports.ConfigParser = _chunkE2OP5JMFcjs.ConfigParser; exports.deepMerge = _chunkE2OP5JMFcjs.deepMerge; exports.resolveCascadingConfig = _chunkE2OP5JMFcjs.resolveCascadingConfig;
 //# sourceMappingURL=index.cjs.map

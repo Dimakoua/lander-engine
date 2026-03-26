@@ -21,81 +21,120 @@ export async function getStaticPaths() {
 
   for (const campaignId of campaigns) {
     const base = await parser.loadCampaignBase(campaignId);
-    
-    // Load mobile overrides if they exist
-    let mobileOverrides = {};
+
+    // Load base mobile (device) overrides
+    let mobileOverrides: any = {};
     try {
       mobileOverrides = await parser.loadOverrides(campaignId, 'mobile');
     } catch (e) {
       // Mobile overrides are optional
     }
-    
-    // Filter out popup steps - only generate routes for normal steps
-    // Popups are rendered as modals within normal steps
-    // Campaign root → redirect to initialStep
+    const hasMobile = Object.keys(mobileOverrides).length > 0;
+
+    // Discover A/B variant subdirectories and load their overrides
+    const variants = await parser.getVariants(campaignId);
+    const variantOverridesMap: Record<string, any> = {};
+    const variantMobileOverridesMap: Record<string, any> = {};
+
+    for (const variant of variants) {
+      try {
+        variantOverridesMap[variant] = await parser.loadOverrides(campaignId, variant);
+      } catch (e) {
+        variantOverridesMap[variant] = {};
+      }
+      try {
+        variantMobileOverridesMap[variant] = await parser.loadOverrides(campaignId, `${variant}/mobile`);
+      } catch (e) {
+        variantMobileOverridesMap[variant] = {};
+      }
+    }
+
+    /**
+     * Build the resolved props for a single page path.
+     * Priority: Base < Device (mobile) < Variant < Variant+Device
+     */
+    function buildProps(
+      stepId: string,
+      isMobile: boolean,
+      variant: string | null,
+      hasMobileRoute: boolean,
+    ) {
+      const deviceOverride   = isMobile ? mobileOverrides : undefined;
+      const variantOverride  = variant ? variantOverridesMap[variant] : undefined;
+      const variantMobileOv  = variant && isMobile ? variantMobileOverridesMap[variant] : undefined;
+
+      const resolvedConfig = resolveCascadingConfig(
+        base,
+        deviceOverride,
+        variantOverride,
+        variantMobileOv,
+      );
+
+      return {
+        campaignId,
+        stepId,
+        isMobile,
+        variant,
+        variants,
+        hasMobileRoute,
+        config: resolvedConfig,
+        step: resolvedConfig.steps[stepId] ?? base.steps[stepId],
+        flow: resolvedConfig.flow,
+        allSteps: resolvedConfig.steps,
+        modalConfigs: resolvedConfig.flow?.modals ?? {},
+        layout: resolvedConfig.layout ?? {},
+      };
+    }
+
+    // Campaign root → server-redirect to initial step (variant assignment happens client-side)
     const initialStepId = base.flow.initialStep;
-    const initialStepConfig = base.steps[initialStepId];
-    if (initialStepConfig) {
+    if (base.steps[initialStepId]) {
       paths.push({
         params: { slug: campaignId },
         props: {
-          campaignId,
-          stepId: initialStepId,
-          isMobile: false,
           isRedirect: true,
           redirectTo: `/${campaignId}/${initialStepId}`,
-          base,
-          mobileOverrides,
-          config: resolveCascadingConfig(base, undefined, undefined, undefined),
-          step: initialStepConfig,
-          flow: base.flow,
-          allSteps: base.steps,
-          modalConfigs: base.flow.modals || {},
-          layout: base.layout || {},
         },
       });
     }
 
-    for (const [stepId, stepConfig] of Object.entries(base.steps)) {
+    for (const [stepId] of Object.entries(base.steps)) {
       const stepType = base.flow.steps[stepId]?.type;
-      
-      // Only create routes for normal steps, skip popups
-      if (stepType !== 'popup') {
-        // Desktop version
+      // Popup steps render as modals inside normal pages — no dedicated routes
+      if (stepType === 'popup') continue;
+
+      // 1. Base desktop
+      paths.push({
+        params: { slug: `${campaignId}/${stepId}` },
+        props: buildProps(stepId, false, null, hasMobile),
+      });
+
+      // 2. Base mobile (only if a mobile/ directory exists)
+      if (hasMobile) {
         paths.push({
-          params: { slug: `${campaignId}/${stepId}` },
-          props: { 
-            campaignId, 
-            stepId, 
-            isMobile: false,
-            base,
-            mobileOverrides,
-            config: resolveCascadingConfig(base, undefined, undefined, undefined),
-            step: stepConfig,
-            flow: base.flow,
-            allSteps: base.steps,
-            modalConfigs: base.flow.modals || {},
-            layout: base.layout || {}
-          }
+          params: { slug: `${campaignId}/${stepId}.mobile` },
+          props: buildProps(stepId, true, null, hasMobile),
         });
-        
-        // Mobile version (only if mobile overrides exist)
-        if (Object.keys(mobileOverrides).length > 0) {
+      }
+
+      // 3. Variant routes
+      for (const variant of variants) {
+        const vmo = variantMobileOverridesMap[variant];
+        // Generate a variant mobile route when the campaign has base mobile overrides
+        // OR when this variant has its own mobile overrides.
+        const hasVariantMobile = hasMobile || Object.keys(vmo).length > 0;
+
+        // Variant desktop
+        paths.push({
+          params: { slug: `${campaignId}/${stepId}.${variant}` },
+          props: buildProps(stepId, false, variant, hasVariantMobile),
+        });
+
+        // Variant mobile
+        if (hasVariantMobile) {
           paths.push({
-            params: { slug: `${campaignId}/${stepId}.mobile` },
-            props: { 
-              campaignId, 
-              stepId, 
-              isMobile: true,
-              base,
-              mobileOverrides,
-              config: resolveCascadingConfig(base, mobileOverrides as any, undefined, undefined),
-              step: mobileOverrides.steps?.[stepId] ? { ...stepConfig, ...mobileOverrides.steps[stepId] } : stepConfig,
-              flow: mobileOverrides.flow ? { ...base.flow, ...mobileOverrides.flow } : base.flow,
-              allSteps: base.steps,
-              modalConfigs: mobileOverrides.flow?.modals ? { ...base.flow.modals, ...mobileOverrides.flow.modals } : (base.flow.modals || {}),
-              layout: mobileOverrides.layout ? { ...base.layout, ...mobileOverrides.layout } : (base.layout || {})
-            }
+            params: { slug: `${campaignId}/${stepId}.${variant}.mobile` },
+            props: buildProps(stepId, true, variant, hasVariantMobile),
           });
         }
       }
@@ -105,23 +144,38 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { isMobile, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout, isRedirect, redirectTo } = Astro.props;
+const {
+  isRedirect,
+  redirectTo,
+  isMobile,
+  variant,
+  variants,
+  hasMobileRoute,
+  config,
+  step,
+  campaignId,
+  stepId,
+  flow,
+  allSteps,
+  modalConfigs,
+  layout,
+} = Astro.props;
 
-// Redirect /{campaignId} → /{campaignId}/{initialStep}
+// Campaign root redirect: /{campaignId} → /{campaignId}/{initialStep}
 if (isRedirect && redirectTo) {
   return Astro.redirect(redirectTo, 302);
 }
 
-// Prepare initial state
 const initialState = {
   ...config.state,
   ...step.state,
-  isMobile, // Include device type in state for reactive components
+  isMobile,
+  variant,
   campaignId,
   stepId,
 };
 
-// Collect available popups for this step (popups that can be triggered from this step)
+// Collect popup steps for ModalsContainer
 const availablePopups: Record<string, any> = {};
 for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
   if (flow.steps[popupId]?.type === 'popup') {
@@ -129,13 +183,12 @@ for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
   }
 }
 
-// Map theme to CSS variables
+// Map theme colors to CSS custom properties
 const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
   acc[`--color-${key}`] = val;
   return acc;
 }, {} as Record<string, string>);
 
-// Favicon: use campaign-defined value or fall back to /favicon.svg
 const faviconHref = config.theme.favicon || '/favicon.svg';
 const faviconExt = faviconHref.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
 const faviconType: Record<string, string> = {
@@ -147,7 +200,6 @@ const faviconType: Record<string, string> = {
   webp: 'image/webp',
 };
 const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
-
 ---
 
 <html lang="en">
@@ -164,7 +216,7 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
         <Registry component={layout.header.component} props={layout.header.props} />
       </header>
     )}
-    
+
     <main id="lander-engine-root">
       {step.sections.map((section: any) => (
         <Registry component={section.component} props={section.props} />
@@ -179,68 +231,86 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
     <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
 
-    {/* Populate the client-side registry with custom action handlers */}
     <script>
       import '../registry-manifest';
     </script>
 
-    <script is:inline>
-      // Client-side device detection and redirect
-      function isMobileDevice() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        const mobilePattern = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-        return mobilePattern.test(userAgent);
-      }
+    <!--
+      Unified client-side routing script.
+      Handles two concerns in one pass to avoid double-redirects:
+        1. A/B variant assignment — randomly assigns the user to a variant on first visit
+           and persists the choice in localStorage for the campaign lifetime.
+        2. Mobile device detection — redirects between the base and `.mobile` URL variants.
 
-      function shouldRedirect() {
-        const currentPath = window.location.pathname;
-        const isMobileDevice_ = isMobileDevice();
-        const isOnMobilePage = currentPath.includes('.mobile');
+      URL scheme: /{campaign}/{stepId}[.{variant}][.mobile]
+      Examples:
+        /campaign_alpha/main
+        /campaign_alpha/main.mobile
+        /campaign_alpha/main.variant_a
+        /campaign_alpha/main.variant_a.mobile
+    -->
+    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId }}>
+      (function () {
+        if (window.location.search.includes('no-redirect')) return;
 
-        // Don't redirect in dev mode with query string
-        if (window.location.search.includes('no-redirect')) {
-          return false;
+        var pathname = window.location.pathname.replace(/\/$/, '');
+        var parts = pathname.split('/');
+        var stepSlug = parts[parts.length - 1]; // e.g. "main.variant_a.mobile"
+
+        // --- Parse current URL suffixes ---
+        var isMobileUrl = stepSlug.endsWith('.mobile');
+        var slugNoMobile = isMobileUrl ? stepSlug.slice(0, stepSlug.length - 7) : stepSlug;
+
+        var currentVariant = null;
+        var baseStepSlug = slugNoMobile;
+        for (var i = 0; i < variants.length; i++) {
+          var v = variants[i];
+          if (slugNoMobile.endsWith('.' + v)) {
+            currentVariant = v;
+            baseStepSlug = slugNoMobile.slice(0, slugNoMobile.length - v.length - 1);
+            break;
+          }
         }
 
-        // If on desktop but should be on mobile
-        if (!isOnMobilePage && isMobileDevice_) {
-          return true;
+        // --- Determine target variant ---
+        var targetVariant = currentVariant;
+        if (variants.length > 0) {
+          var storageKey = 'lander-variant-' + campaignId;
+          var stored = localStorage.getItem(storageKey);
+          if (stored !== null && variants.indexOf(stored) !== -1) {
+            targetVariant = stored;
+          } else {
+            // Random assignment — pick one of the declared variants
+            targetVariant = variants[Math.floor(Math.random() * variants.length)];
+            localStorage.setItem(storageKey, targetVariant);
+          }
         }
 
-        // If on mobile but should be on desktop
-        if (isOnMobilePage && !isMobileDevice_) {
-          return true;
+        // --- Determine target device ---
+        function isMobileDevice() {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent || navigator.vendor || window.opera
+          );
         }
+        var targetMobile = hasMobileRoute && isMobileDevice();
 
-        return false;
-      }
+        // --- Build target slug and redirect if needed ---
+        var targetSlug = baseStepSlug;
+        if (targetVariant) targetSlug += '.' + targetVariant;
+        if (targetMobile) targetSlug += '.mobile';
 
-      if (shouldRedirect()) {
-        const currentPath = window.location.pathname;
-        let redirectPath = currentPath;
-
-        if (currentPath.includes('.mobile')) {
-          // Remove .mobile from the path
-          redirectPath = currentPath.replace('.mobile', '');
-        } else {
-          // Add .mobile to the path
-          redirectPath = currentPath.replace(/\/$/, '') + '.mobile';
+        if (targetSlug !== stepSlug) {
+          parts[parts.length - 1] = targetSlug;
+          window.location.href = parts.join('/') + window.location.search;
         }
-
-        window.location.href = redirectPath + window.location.search;
-      }
+      })();
     </script>
 
     <script is:inline define:vars={{ initialState }}>
-      // This script runs before hydration to seed the state
-      // (Simplified for this example; in production, this would use the core's hydrateState)
-      
-      // Handle backdrop click to close modals
-      document.addEventListener('click', (e) => {
-        const modal = e.target.closest('.lander-modal');
+      document.addEventListener('click', function (e) {
+        var modal = e.target.closest('.lander-modal');
         if (modal && e.target === modal) {
-          const closeOnBackdrop = modal.dataset.closeOnBackdrop === 'true';
-          if (closeOnBackdrop) {
+          if (modal.dataset.closeOnBackdrop === 'true') {
             modal.classList.add('modal-hidden');
           }
         }

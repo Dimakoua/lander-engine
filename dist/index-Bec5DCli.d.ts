@@ -100,6 +100,11 @@ declare class ConfigParser {
      */
     getCampaigns(): Promise<string[]>;
     /**
+     * Scans for A/B variant subdirectories within a campaign.
+     * Variants are any subdirectories that are not reserved names ('mobile', 'steps').
+     */
+    getVariants(campaignId: string): Promise<string[]>;
+    /**
      * Reads and parses a JSON file with descriptive error handling.
      */
     private readJson;
