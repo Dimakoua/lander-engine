@@ -207,7 +207,8 @@ Defines design tokens that are injected into the page as CSS custom properties o
   "tokens": {
     "buttonRadius": "12px",
     "cardShadow":   "0 4px 24px rgba(0,0,0,0.08)"
-  }
+  },
+  "favicon": "/assets/campaign-a-icon.svg"
 }
 ```
 
@@ -235,6 +236,7 @@ Use these in your components and Tailwind classes:
 | `spacing` | `Record<string, string>` | No | Spacing scale |
 | `borderRadius` | `Record<string, string>` | No | Border-radius scale |
 | `tokens` | `Record<string, any>` | No | Arbitrary named design tokens |
+| `favicon` | `string` | No | Favicon URL (root-relative or absolute). Supported formats: `.svg`, `.ico`, `.png`, `.jpg`, `.webp`. Falls back to `/favicon.svg`. |
 
 ---
 

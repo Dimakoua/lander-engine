@@ -135,12 +135,25 @@ const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, v
   return acc;
 }, {} as Record<string, string>);
 
+// Favicon: use campaign-defined value or fall back to /favicon.svg
+const faviconHref = config.theme.favicon || '/favicon.svg';
+const faviconExt = faviconHref.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+const faviconType: Record<string, string> = {
+  svg:  'image/svg+xml',
+  ico:  'image/x-icon',
+  png:  'image/png',
+  jpg:  'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+};
+const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
+
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type={faviconMime} href={faviconHref} />
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />

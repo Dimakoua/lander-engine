@@ -4,6 +4,15 @@ export interface ThemeConfig {
   spacing?: Record<string, string>;
   borderRadius?: Record<string, string>;
   tokens?: Record<string, any>;
+  /**
+   * URL of the campaign favicon. Supports absolute URLs and root-relative paths.
+   * File extension is used to infer the MIME type automatically.
+   * Supported: .svg, .ico, .png, .jpg/.jpeg, .webp
+   * Falls back to /favicon.svg if not set.
+   * @example "/assets/my-icon.svg"
+   * @example "https://cdn.example.com/favicon.ico"
+   */
+  favicon?: string;
 }
 
 export interface SEOConfig {
