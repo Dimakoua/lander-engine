@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "lander-engine": "file:..",
-    "astro": "^4.5.0",
     "@astrojs/tailwind": "^5.1.0",
     "@astrojs/react": "^3.1.0",
     "react": "^18.2.0",
