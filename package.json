@@ -55,7 +55,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src/**",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishonly": "npm run build"
   },
   "dependencies": {
     "astro": "^4.5.0",
