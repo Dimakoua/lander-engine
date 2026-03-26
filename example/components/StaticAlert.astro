@@ -1,0 +1,48 @@
+---
+type AlertType = 'info' | 'success' | 'warning' | 'error';
+
+interface Props {
+  type?: AlertType;
+  title?: string;
+  message?: string;
+}
+
+const { type = 'info', title, message } = Astro.props;
+
+const alertStyles: Record<AlertType, { bg: string; border: string; icon: string; color: string }> = {
+  info: { bg: '#e3f2fd', border: '#2196f3', icon: 'ℹ️', color: '#1976d2' },
+  success: { bg: '#e8f5e9', border: '#4caf50', icon: '✓', color: '#388e3c' },
+  warning: { bg: '#fff3e0', border: '#ff9800', icon: '⚠️', color: '#f57c00' },
+  error: { bg: '#ffebee', border: '#f44336', icon: '✕', color: '#d32f2f' }
+};
+
+const style = alertStyles[type];
+---
+
+<div
+  style={{
+    backgroundColor: style.bg,
+    borderLeft: `4px solid ${style.border}`,
+    padding: '1rem',
+    marginBottom: '1rem',
+    borderRadius: '4px',
+    display: 'flex',
+    gap: '0.75rem'
+  }}
+>
+  <span style={{ fontSize: '1.5rem' }}>{style.icon}</span>
+  <div>
+    {title && (
+      <h4 style={{ margin: '0 0 0.25rem 0', color: style.color }}>
+        {title}
+      </h4>
+    )}
+    {message && <p style={{ margin: '0', color: '#333' }}>{message}</p>}
+  </div>
+</div>
+
+<style>
+  div {
+    box-sizing: border-box;
+  }
+</style>

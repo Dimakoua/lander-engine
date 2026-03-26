@@ -5,9 +5,14 @@ import Component_1 from '/Users/dmytro/fun/lp-factory-package/example/components
 import Component_2 from '/Users/dmytro/fun/lp-factory-package/example/components/Features.tsx';
 import Component_3 from '/Users/dmytro/fun/lp-factory-package/example/components/Hero.tsx';
 import Component_4 from '/Users/dmytro/fun/lp-factory-package/example/components/MessageConfirmation.tsx';
-import Component_5 from '/Users/dmytro/fun/lp-factory-package/example/components/Testimonials.tsx';
-import Component_6 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataDisplay.tsx';
-import Component_7 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataForm.tsx';
+import Component_5 from '/Users/dmytro/fun/lp-factory-package/example/components/StaticAlert.astro';
+import Component_6 from '/Users/dmytro/fun/lp-factory-package/example/components/StaticBadge.astro';
+import Component_7 from '/Users/dmytro/fun/lp-factory-package/example/components/StaticCard.astro';
+import Component_8 from '/Users/dmytro/fun/lp-factory-package/example/components/StaticDivider.astro';
+import Component_9 from '/Users/dmytro/fun/lp-factory-package/example/components/StaticHeader.astro';
+import Component_10 from '/Users/dmytro/fun/lp-factory-package/example/components/Testimonials.tsx';
+import Component_11 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataDisplay.tsx';
+import Component_12 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataForm.tsx';
 
 const { component, props } = Astro.props;
 ---
@@ -16,6 +21,11 @@ const { component, props } = Astro.props;
 {component === 'Features' && <Component_2 {...props} client:load />}
 {component === 'Hero' && <Component_3 {...props} client:load />}
 {component === 'MessageConfirmation' && <Component_4 {...props} client:load />}
-{component === 'Testimonials' && <Component_5 {...props} client:load />}
-{component === 'UserDataDisplay' && <Component_6 {...props} client:load />}
-{component === 'UserDataForm' && <Component_7 {...props} client:load />}
+{component === 'StaticAlert' && <Component_5 {...props} />}
+{component === 'StaticBadge' && <Component_6 {...props} />}
+{component === 'StaticCard' && <Component_7 {...props} />}
+{component === 'StaticDivider' && <Component_8 {...props} />}
+{component === 'StaticHeader' && <Component_9 {...props} />}
+{component === 'Testimonials' && <Component_10 {...props} client:load />}
+{component === 'UserDataDisplay' && <Component_11 {...props} client:load />}
+{component === 'UserDataForm' && <Component_12 {...props} client:load />}

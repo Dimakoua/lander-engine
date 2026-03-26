@@ -65,6 +65,96 @@
       }
     },
     {
+      "component": "StaticHeader",
+      "props": {
+        "title": "📚 Static Components Examples",
+        "subtitle": "These components render as pure HTML with zero JavaScript",
+        "align": "center"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "success",
+        "title": "No JavaScript Required",
+        "message": "Static components ship zero JavaScript bundles and render instantly"
+      }
+    },
+    {
+      "component": "StaticCard",
+      "props": {
+        "icon": "⚡",
+        "title": "Lightning Fast",
+        "description": "Static components load instantly without any hydration overhead",
+        "backgroundColor": "#f0f4ff",
+        "borderColor": "#3b82f6"
+      }
+    },
+    {
+      "component": "StaticCard",
+      "props": {
+        "icon": "🔒",
+        "title": "Type Safe",
+        "description": "Full TypeScript support with perfect IDE autocomplete",
+        "backgroundColor": "#f0fdf4",
+        "borderColor": "#10b981"
+      }
+    },
+    {
+      "component": "StaticCard",
+      "props": {
+        "icon": "🎨",
+        "title": "Fully Customizable",
+        "description": "Pass any props to control styling and behavior",
+        "backgroundColor": "#fff7ed",
+        "borderColor": "#f59e0b"
+      }
+    },
+    {
+      "component": "StaticDivider",
+      "props": {}
+    },
+    {
+      "component": "StaticHeader",
+      "props": {
+        "title": "Available Static Astro Components",
+        "subtitle": "Mix and match static and interactive components",
+        "align": "left"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "info",
+        "title": "StaticCard",
+        "message": "Container component with icon, title, and description support"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "info",
+        "title": "StaticHeader",
+        "message": "Display title and subtitle with alignment options"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "info",
+        "title": "StaticBadge",
+        "message": "Inline badges with multiple variants (default, primary, success, warning, error)"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "info",
+        "title": "StaticDivider",
+        "message": "Horizontal separator with customizable color and thickness"
+      }
+    },
+    {
       "component": "Hero",
       "props": {
         "title": "Ready to Explore?",

@@ -1,0 +1,44 @@
+---
+type AlignType = 'left' | 'center' | 'right';
+
+interface Props {
+  title?: string;
+  subtitle?: string;
+  align?: AlignType;
+  color?: string;
+}
+
+const { title, subtitle, align = 'center', color = '#000' } = Astro.props;
+---
+
+<div style={{ textAlign: align, marginBottom: '2rem' }}>
+  {title && (
+    <h2
+      style={{
+        margin: '0 0 0.5rem 0',
+        fontSize: '2rem',
+        fontWeight: 'bold',
+        color
+      }}
+    >
+      {title}
+    </h2>
+  )}
+  {subtitle && (
+    <p
+      style={{
+        margin: '0',
+        fontSize: '1.1rem',
+        color: '#666'
+      }}
+    >
+      {subtitle}
+    </p>
+  )}
+</div>
+
+<style>
+  div {
+    box-sizing: border-box;
+  }
+</style>

@@ -48,6 +48,38 @@
       "props": {}
     },
     {
+      "component": "StaticHeader",
+      "props": {
+        "title": "📚 Astro Static Examples",
+        "subtitle": "Pure HTML - Zero JavaScript",
+        "align": "center"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "success",
+        "title": "Native Astro",
+        "message": "True zero-JS components with native Astro format"
+      }
+    },
+    {
+      "component": "StaticCard",
+      "props": {
+        "icon": "⚡",
+        "title": "Lightning Fast",
+        "description": "Instant render times"
+      }
+    },
+    {
+      "component": "StaticAlert",
+      "props": {
+        "type": "info",
+        "title": "Astro Components",
+        "message": "Use .astro format for true static rendering"
+      }
+    },
+    {
       "component": "Hero",
       "props": {
         "title": "Explore More",
