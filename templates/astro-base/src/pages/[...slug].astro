@@ -32,6 +32,30 @@ export async function getStaticPaths() {
     
     // Filter out popup steps - only generate routes for normal steps
     // Popups are rendered as modals within normal steps
+    // Campaign root → redirect to initialStep
+    const initialStepId = base.flow.initialStep;
+    const initialStepConfig = base.steps[initialStepId];
+    if (initialStepConfig) {
+      paths.push({
+        params: { slug: campaignId },
+        props: {
+          campaignId,
+          stepId: initialStepId,
+          isMobile: false,
+          isRedirect: true,
+          redirectTo: `/${campaignId}/${initialStepId}`,
+          base,
+          mobileOverrides,
+          config: resolveCascadingConfig(base, undefined, undefined, undefined),
+          step: initialStepConfig,
+          flow: base.flow,
+          allSteps: base.steps,
+          modalConfigs: base.flow.modals || {},
+          layout: base.layout || {},
+        },
+      });
+    }
+
     for (const [stepId, stepConfig] of Object.entries(base.steps)) {
       const stepType = base.flow.steps[stepId]?.type;
       
@@ -81,7 +105,12 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { isMobile, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout } = Astro.props;
+const { isMobile, config, step, campaignId, stepId, flow, allSteps, modalConfigs, layout, isRedirect, redirectTo } = Astro.props;
+
+// Redirect /{campaignId} → /{campaignId}/{initialStep}
+if (isRedirect && redirectTo) {
+  return Astro.redirect(redirectTo, 302);
+}
 
 // Prepare initial state
 const initialState = {
