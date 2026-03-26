@@ -3,6 +3,26 @@
   "version": "0.1.0",
   "description": "Configuration-driven JAMstack landing page meta-framework",
   "type": "module",
+  "license": "MIT",
+  "author": "Dmytro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dmytro/lp-factory-package"
+  },
+  "keywords": [
+    "landing-page",
+    "astro",
+    "jamstack",
+    "configuration-driven",
+    "static-site-generation",
+    "a-b-testing",
+    "mobile-detection"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
