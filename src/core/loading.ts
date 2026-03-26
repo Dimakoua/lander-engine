@@ -1,5 +1,13 @@
 import { $state } from './state';
 
+/**
+ * Derives the loading state key for a `rest` action.
+ * Single source of truth used by both the dispatcher (write) and loading observers (read).
+ */
+export function getRestLoadingKey(loadingKey?: string, stateKey?: string): string {
+  return loadingKey || `loading_${stateKey || 'request'}`;
+}
+
 interface LoadingActionResult {
   isLoading: boolean;
   values: Record<string, any>;
@@ -23,9 +31,7 @@ function extractActionKeys(actions: any[]) {
     if (loadingKey) {
       loadingKeys.add(loadingKey);
     } else if (action.type === 'rest') {
-      // Mirror dispatcher's fallback loading key: loading_${stateKey || 'request'}
-      const stateKey = action.payload?.stateKey;
-      loadingKeys.add(`loading_${stateKey || 'request'}`);
+      loadingKeys.add(getRestLoadingKey(action.payload?.loadingKey, action.payload?.stateKey));
     }
 
     // Extract state key from payload (works for any action type)

@@ -1,6 +1,7 @@
 import { Action } from '@/types/actions';
 import { setState, toggleState, $state } from './state';
 import { registry } from './registry';
+import { getRestLoadingKey } from './loading';
 
 export class ActionDispatcher {
   /**
@@ -49,7 +50,7 @@ export class ActionDispatcher {
 
       case 'rest': {
         const { url, method = 'GET', headers, body, onSuccess, onError, stateKey, loadingKey } = action.payload;
-        const loadKey = loadingKey || `loading_${stateKey || 'request'}`;
+        const loadKey = getRestLoadingKey(loadingKey, stateKey);
         
         try {
           // Set loading state
