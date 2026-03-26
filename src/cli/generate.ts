@@ -52,12 +52,16 @@ export class WorkspaceGenerator {
     let astroRegistryContent = `---
 // Auto-generated Astro Registry\n`;
 
-    componentFiles.forEach((file, index) => {
+    let componentIndex = 0;
+    
+    // Import all components
+    componentFiles.forEach((file) => {
       const name = path.basename(file, path.extname(file));
       const importPath = path.resolve(componentsDir, file).replace(/\\/g, '/');
-      astroRegistryContent += `import Component_${index} from '${importPath}';\n`;
-      manifestContent += `import Component_${index} from '${importPath}';\n`;
-      manifestContent += `registry.registerComponent('${name}', Component_${index});\n`;
+      astroRegistryContent += `import Component_${componentIndex} from '${importPath}';\n`;
+      manifestContent += `import Component_${componentIndex} from '${importPath}';\n`;
+      manifestContent += `registry.registerComponent('${name}', Component_${componentIndex});\n`;
+      componentIndex++;
     });
 
     actionFiles.forEach((file, index) => {
@@ -72,9 +76,19 @@ const { component, props } = Astro.props;
 ---
 `;
 
-    componentFiles.forEach((file, index) => {
+    componentIndex = 0;
+    componentFiles.forEach((file) => {
       const name = path.basename(file, path.extname(file));
-      astroRegistryContent += `{component === '${name}' && <Component_${index} {...props} client:load />}\n`;
+      const isAstroComponent = file.endsWith('.astro');
+      
+      if (isAstroComponent) {
+        // Astro components don't need client: directive
+        astroRegistryContent += `{component === '${name}' && <Component_${componentIndex} {...props} />}\n`;
+      } else {
+        // React/Vue/Svelte components get client:load
+        astroRegistryContent += `{component === '${name}' && <Component_${componentIndex} {...props} client:load />}\n`;
+      }
+      componentIndex++;
     });
 
     const manifestPath = path.join(this.workspaceDir, 'src/registry-manifest.ts');
