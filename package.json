@@ -61,11 +61,9 @@
   "dependencies": {
     "astro": "^6.0.8",
     "cac": "^6.7.14",
-    "clsx": "^2.1.0",
     "fast-glob": "^3.3.2",
     "fs-extra": "^11.2.0",
-    "nanostores": "^0.10.0",
-    "tailwind-merge": "^2.2.2"
+    "nanostores": "^0.10.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
