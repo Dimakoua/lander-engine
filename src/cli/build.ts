@@ -26,7 +26,7 @@ export class Builder {
       const child = spawn(astroBin, [command], {
         cwd: this.workspaceDir,
         stdio: 'inherit',
-        shell: true,
+        shell: false,
         env: {
           ...process.env,
           LANDER_JSON_CONFIGS_DIR: jsonConfigsDir,
