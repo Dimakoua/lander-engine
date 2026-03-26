@@ -52,7 +52,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && chmod +x dist/cli/index.js",
     "dev": "tsup --watch",
     "lint": "eslint src/**",
     "typecheck": "tsc --noEmit",
