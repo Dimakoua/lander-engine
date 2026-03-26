@@ -21,6 +21,8 @@
   "files": [
     "src",
     "templates",
+    "tsconfig.json",
+    "tsup.config.ts",
     "README.md",
     "LICENSE"
   ],
