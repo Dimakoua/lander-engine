@@ -99,7 +99,11 @@ export function watchLoadingAction(
     const values: Record<string, any> = {};
 
     stateKeys.forEach((key) => {
-      values[key] = current[key];
+      // Only include keys that have been set — omit undefined to avoid
+      // SSR/hydration mismatches and "undefined" string renders
+      if (current[key] !== undefined) {
+        values[key] = current[key];
+      }
     });
 
     callback({ isLoading, values });
@@ -144,7 +148,9 @@ export function getLoadingActionState(
   const values: Record<string, any> = {};
 
   stateKeys.forEach((key) => {
-    values[key] = current[key];
+    if (current[key] !== undefined) {
+      values[key] = current[key];
+    }
   });
 
   return { isLoading, values };
