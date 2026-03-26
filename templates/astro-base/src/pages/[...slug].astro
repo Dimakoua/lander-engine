@@ -209,6 +209,8 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
+    <!-- Hide until redirect check completes to prevent flash of wrong URL -->
+    <style>body { visibility: hidden; }</style>
   </head>
   <body style={themeVars}>
     {layout?.header && (
@@ -251,7 +253,9 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     -->
     <script is:inline define:vars={{ variants, hasMobileRoute, campaignId }}>
       (function () {
-        if (window.location.search.includes('no-redirect')) return;
+        function show() { document.body.style.visibility = 'visible'; }
+
+        if (window.location.search.includes('no-redirect')) { show(); return; }
 
         var pathname = window.location.pathname.replace(/\/$/, '');
         var parts = pathname.split('/');
@@ -301,7 +305,10 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
         if (targetSlug !== stepSlug) {
           parts[parts.length - 1] = targetSlug;
-          window.location.href = parts.join('/') + window.location.search;
+          // Use replace() so the intermediate URL is not added to browser history
+          window.location.replace(parts.join('/') + window.location.search);
+        } else {
+          show();
         }
       })();
     </script>
