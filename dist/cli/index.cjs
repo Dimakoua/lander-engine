@@ -1,30 +1,30 @@
 #!/usr/bin/env node
-
+"use strict"; function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { newObj[key] = obj[key]; } } } newObj.default = obj; return newObj; } } function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 // src/cli/index.ts
-import { cac } from "cac";
-import path3 from "path";
-import fs2 from "fs-extra";
+var _cac = require('cac');
+var _path = require('path'); var _path2 = _interopRequireDefault(_path);
+var _fsextra = require('fs-extra'); var _fsextra2 = _interopRequireDefault(_fsextra);
 
 // src/cli/generate.ts
-import fs from "fs-extra";
-import path from "path";
-import glob from "fast-glob";
+
+
+var _fastglob = require('fast-glob'); var _fastglob2 = _interopRequireDefault(_fastglob);
 var WorkspaceGenerator = class {
-  config;
-  workspaceDir;
+  
+  
   constructor(config) {
     this.config = config;
-    this.workspaceDir = path.resolve(config.projectRoot, ".lander-engine");
+    this.workspaceDir = _path2.default.resolve(config.projectRoot, ".lander-engine");
   }
   /**
    * Initializes the hidden workspace.
    */
   async generate() {
-    await fs.ensureDir(this.workspaceDir);
-    const templateDir = path.resolve(this.config.engineRoot, "templates/astro-base");
-    if (await fs.pathExists(templateDir)) {
-      await fs.emptyDir(this.workspaceDir);
-      await fs.copy(templateDir, this.workspaceDir, {
+    await _fsextra2.default.ensureDir(this.workspaceDir);
+    const templateDir = _path2.default.resolve(this.config.engineRoot, "templates/astro-base");
+    if (await _fsextra2.default.pathExists(templateDir)) {
+      await _fsextra2.default.emptyDir(this.workspaceDir);
+      await _fsextra2.default.copy(templateDir, this.workspaceDir, {
         overwrite: true,
         dereference: true,
         filter: (src) => !src.includes("node_modules")
@@ -37,10 +37,10 @@ var WorkspaceGenerator = class {
    * Scans user directories and generates a manifest for the runtime registry.
    */
   async generateRegistryManifest() {
-    const componentsDir = path.resolve(this.config.projectRoot, this.config.componentsDir || "components");
-    const actionsDir = path.resolve(this.config.projectRoot, this.config.actionsDir || "actions");
-    const componentFiles = await glob("**/*.{tsx,jsx,astro,vue,svelte}", { cwd: componentsDir });
-    const actionFiles = await glob("**/*.{ts,js}", { cwd: actionsDir });
+    const componentsDir = _path2.default.resolve(this.config.projectRoot, this.config.componentsDir || "components");
+    const actionsDir = _path2.default.resolve(this.config.projectRoot, this.config.actionsDir || "actions");
+    const componentFiles = await _fastglob2.default.call(void 0, "**/*.{tsx,jsx,astro,vue,svelte}", { cwd: componentsDir });
+    const actionFiles = await _fastglob2.default.call(void 0, "**/*.{ts,js}", { cwd: actionsDir });
     let manifestContent = `// Auto-generated manifest
 `;
     manifestContent += `import { registry } from 'lander-engine/core';
@@ -51,8 +51,8 @@ var WorkspaceGenerator = class {
 `;
     let componentIndex = 0;
     componentFiles.forEach((file) => {
-      const name = path.basename(file, path.extname(file));
-      const importPath = path.resolve(componentsDir, file).replace(/\\/g, "/");
+      const name = _path2.default.basename(file, _path2.default.extname(file));
+      const importPath = _path2.default.resolve(componentsDir, file).replace(/\\/g, "/");
       astroRegistryContent += `import Component_${componentIndex} from '${importPath}';
 `;
       manifestContent += `import Component_${componentIndex} from '${importPath}';
@@ -62,8 +62,8 @@ var WorkspaceGenerator = class {
       componentIndex++;
     });
     actionFiles.forEach((file, index) => {
-      const name = path.basename(file, path.extname(file));
-      const importPath = path.resolve(actionsDir, file).replace(/\\/g, "/");
+      const name = _path2.default.basename(file, _path2.default.extname(file));
+      const importPath = _path2.default.resolve(actionsDir, file).replace(/\\/g, "/");
       manifestContent += `import * as Action_${index} from '${importPath}';
 `;
       manifestContent += `registry.registerActions(Action_${index});
@@ -75,7 +75,7 @@ const { component, props } = Astro.props;
 `;
     componentIndex = 0;
     componentFiles.forEach((file) => {
-      const name = path.basename(file, path.extname(file));
+      const name = _path2.default.basename(file, _path2.default.extname(file));
       const isAstroComponent = file.endsWith(".astro");
       if (isAstroComponent) {
         astroRegistryContent += `{component === '${name}' && <Component_${componentIndex} {...props} />}
@@ -86,11 +86,11 @@ const { component, props } = Astro.props;
       }
       componentIndex++;
     });
-    const manifestPath = path.join(this.workspaceDir, "src/registry-manifest.ts");
-    const astroRegistryPath = path.join(this.workspaceDir, "src/Registry.astro");
-    await fs.ensureDir(path.dirname(manifestPath));
-    await fs.writeFile(manifestPath, manifestContent);
-    await fs.writeFile(astroRegistryPath, astroRegistryContent);
+    const manifestPath = _path2.default.join(this.workspaceDir, "src/registry-manifest.ts");
+    const astroRegistryPath = _path2.default.join(this.workspaceDir, "src/Registry.astro");
+    await _fsextra2.default.ensureDir(_path2.default.dirname(manifestPath));
+    await _fsextra2.default.writeFile(manifestPath, manifestContent);
+    await _fsextra2.default.writeFile(astroRegistryPath, astroRegistryContent);
   }
   /**
    * Generates domain-to-campaign routing artifacts from routing.config.js.
@@ -103,17 +103,17 @@ const { component, props } = Astro.props;
   async generateDomainRouting() {
     const routingConfig = this.config.routingConfig;
     if (!routingConfig || Object.keys(routingConfig).length === 0) return;
-    const jsonConfigsDir = path.resolve(
+    const jsonConfigsDir = _path2.default.resolve(
       this.config.projectRoot,
       this.config.jsonConfigsDir || "json_configs"
     );
     const domainPaths = {};
     for (const [domain, campaignId] of Object.entries(routingConfig)) {
       try {
-        const flow = await fs.readJson(path.join(jsonConfigsDir, campaignId, "flow.json"));
+        const flow = await _fsextra2.default.readJson(_path2.default.join(jsonConfigsDir, campaignId, "flow.json"));
         const initialStep = flow.initialStep || "main";
         domainPaths[domain] = `/${campaignId}/${initialStep}`;
-      } catch {
+      } catch (e2) {
         console.warn(
           `routing.config.js: could not read flow.json for campaign "${campaignId}" (domain: ${domain}), falling back to /${campaignId}`
         );
@@ -158,33 +158,33 @@ const { component, props } = Astro.props;
       permanent: false
     }));
     const vercelJson = JSON.stringify({ redirects: vercelRedirects }, null, 2);
-    await fs.ensureDir(path.join(this.workspaceDir, "src/pages"));
-    await fs.ensureDir(path.join(this.workspaceDir, "public"));
-    await fs.writeFile(path.join(this.workspaceDir, "src/pages/index.astro"), indexAstro);
-    await fs.writeFile(path.join(this.workspaceDir, "public/_redirects"), netlifyRedirects);
-    await fs.writeFile(path.join(this.workspaceDir, "public/vercel.json"), vercelJson);
+    await _fsextra2.default.ensureDir(_path2.default.join(this.workspaceDir, "src/pages"));
+    await _fsextra2.default.ensureDir(_path2.default.join(this.workspaceDir, "public"));
+    await _fsextra2.default.writeFile(_path2.default.join(this.workspaceDir, "src/pages/index.astro"), indexAstro);
+    await _fsextra2.default.writeFile(_path2.default.join(this.workspaceDir, "public/_redirects"), netlifyRedirects);
+    await _fsextra2.default.writeFile(_path2.default.join(this.workspaceDir, "public/vercel.json"), vercelJson);
     console.log(`Domain routing configured for ${Object.keys(domainPaths).length} domain(s).`);
   }
 };
 
 // src/cli/build.ts
-import { spawn } from "child_process";
-import path2 from "path";
+var _child_process = require('child_process');
+
 var Builder = class {
-  config;
-  workspaceDir;
+  
+  
   constructor(config) {
     this.config = config;
-    this.workspaceDir = path2.resolve(config.projectRoot, ".lander-engine");
+    this.workspaceDir = _path2.default.resolve(config.projectRoot, ".lander-engine");
   }
   /**
    * Invokes an Astro CLI command within the hidden workspace context.
    */
   async runAstro(command) {
     return new Promise((resolve, reject) => {
-      const astroBin = path2.resolve(this.config.projectRoot, "node_modules/.bin/astro");
-      const jsonConfigsDir = this.config.jsonConfigsDir ? path2.resolve(this.config.projectRoot, this.config.jsonConfigsDir) : path2.resolve(this.config.projectRoot, "json_configs");
-      const child = spawn(astroBin, [command], {
+      const astroBin = _path2.default.resolve(this.config.projectRoot, "node_modules/.bin/astro");
+      const jsonConfigsDir = this.config.jsonConfigsDir ? _path2.default.resolve(this.config.projectRoot, this.config.jsonConfigsDir) : _path2.default.resolve(this.config.projectRoot, "json_configs");
+      const child = _child_process.spawn.call(void 0, astroBin, [command], {
         cwd: this.workspaceDir,
         stdio: "inherit",
         shell: false,
@@ -203,9 +203,9 @@ var Builder = class {
     });
   }
   async logPageSizes() {
-    const distDir = path2.resolve(this.workspaceDir, "dist");
-    const fs3 = await import("fs/promises");
-    const pathLib = await import("path");
+    const distDir = _path2.default.resolve(this.workspaceDir, "dist");
+    const fs3 = await Promise.resolve().then(() => _interopRequireWildcard(require("fs/promises")));
+    const pathLib = await Promise.resolve().then(() => _interopRequireWildcard(require("path")));
     async function walk(dir) {
       const entries = await fs3.readdir(dir, { withFileTypes: true });
       const files = [];
@@ -244,29 +244,29 @@ var Builder = class {
 };
 
 // src/cli/index.ts
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-var __filename = fileURLToPath(import.meta.url);
-var __dirname = dirname(__filename);
-var cli = cac("lander");
+var _url = require('url');
+
+var __filename = _url.fileURLToPath.call(void 0, import.meta.url);
+var __dirname = _path.dirname.call(void 0, __filename);
+var cli = _cac.cac.call(void 0, "lander");
 async function resolveConfig() {
   const projectRoot = process.cwd();
-  const engineRoot = path3.resolve(__dirname, "../../");
-  const configPath = path3.resolve(projectRoot, "lander.config.js");
+  const engineRoot = _path2.default.resolve(__dirname, "../../");
+  const configPath = _path2.default.resolve(projectRoot, "lander.config.js");
   let userConfig = {};
-  if (await fs2.pathExists(configPath)) {
+  if (await _fsextra2.default.pathExists(configPath)) {
     try {
-      const module = await import(configPath);
+      const module = await Promise.resolve().then(() => _interopRequireWildcard(require(configPath)));
       userConfig = module.default || module;
     } catch (e) {
       console.warn("Failed to load lander.config.js, using defaults");
     }
   }
   let routingConfig;
-  const routingConfigPath = path3.resolve(projectRoot, "routing.config.js");
-  if (await fs2.pathExists(routingConfigPath)) {
+  const routingConfigPath = _path2.default.resolve(projectRoot, "routing.config.js");
+  if (await _fsextra2.default.pathExists(routingConfigPath)) {
     try {
-      const module = await import(routingConfigPath);
+      const module = await Promise.resolve().then(() => _interopRequireWildcard(require(routingConfigPath)));
       routingConfig = module.default || module;
     } catch (e) {
       console.warn("Failed to load routing.config.js, domain routing will be skipped");
@@ -317,4 +317,4 @@ cli.command("build", "Build the static landing pages").action(async () => {
 });
 cli.help();
 cli.parse();
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.cjs.map
