@@ -1,98 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { dispatcher, getState, $state } from 'lander-engine/core';
+import { dispatcher, watchLoadingAction, getLoadingActionState } from 'lander-engine/core';
 
-function collectRestLoadingKeys(actions: any[]): string[] {
-  const keys = new Set<string>();
-
-  const walk = (action: any) => {
-    if (!action || typeof action !== 'object') return;
-
-    if (action.type === 'rest') {
-      const stateKey = action.payload?.stateKey;
-      const loadingKey = action.payload?.loadingKey || `loading_${stateKey || 'request'}`;
-      keys.add(loadingKey);
-    }
-
-    if (action.type === 'sequence' && Array.isArray(action.payload?.actions)) {
-      action.payload.actions.forEach(walk);
-    }
-
-    if (action.type === 'conditional') {
-      if (Array.isArray(action.payload?.onTrue)) action.payload.onTrue.forEach(walk);
-      if (Array.isArray(action.payload?.onFalse)) action.payload.onFalse.forEach(walk);
-    }
-  };
-
-  if (Array.isArray(actions)) {
-    actions.forEach(walk);
-  }
-
-  return Array.from(keys);
+interface HeroProps {
+  title: string;
+  subtitle: string;
+  ctaText?: string;
+  onCtaClick?: any[];
 }
 
-function collectRestStateKeys(actions: any[]): string[] {
-  const keys = new Set<string>();
-
-  const walk = (action: any) => {
-    if (!action || typeof action !== 'object') return;
-
-    if (action.type === 'rest' && action.payload?.stateKey) {
-      keys.add(action.payload.stateKey);
-    }
-
-    if (action.type === 'sequence' && Array.isArray(action.payload?.actions)) {
-      action.payload.actions.forEach(walk);
-    }
-
-    if (action.type === 'conditional') {
-      if (Array.isArray(action.payload?.onTrue)) action.payload.onTrue.forEach(walk);
-      if (Array.isArray(action.payload?.onFalse)) action.payload.onFalse.forEach(walk);
-    }
-  };
-
-  if (Array.isArray(actions)) {
-    actions.forEach(walk);
-  }
-
-  return Array.from(keys);
-}
-
-export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
-  const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingKeys, setLoadingKeys] = useState<string[]>([]);
-  const [stateKeys, setStateKeys] = useState<string[]>([]);
-  const [restState, setRestState] = useState<Record<string, any>>({});
-
+// Local React wrapper - consumers can create their own for their framework
+function useLoadingAction(actions: any) {
+  const [state, setState] = useState(() => getLoadingActionState(actions));
   useEffect(() => {
-    const keys = collectRestLoadingKeys(onCtaClick);
-    setLoadingKeys(keys);
+    // Re-subscribe whenever actions change
+    const unsubscribe = watchLoadingAction(actions, setState);
+    return unsubscribe;
+  }, [JSON.stringify(actions)]); // Serialize actions for dependency tracking
 
-    const stateKeys = collectRestStateKeys(onCtaClick);
-    setStateKeys(stateKeys);
+  return state;
+}
 
-    const updateRestState = () => {
-      const current = $state.get();
-      const nextState: Record<string, any> = {};
-      stateKeys.forEach((key) => {
-        nextState[key] = current[key];
-      });
-      setRestState(nextState);
-    };
-
-    // initialize values
-    updateRestState();
-    setIsLoading(keys.some((k) => Boolean($state.get()[k])));
-
-    const unsubscribe = $state.listen(() => {
-      updateRestState();
-      setIsLoading(keys.some((k) => Boolean($state.get()[k])));
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [onCtaClick]);
+export default function Hero({ title, subtitle, ctaText, onCtaClick }: HeroProps) {
+  const [copied, setCopied] = useState(false);
+  const { isLoading, values } = useLoadingAction(onCtaClick);
 
   const handleCTAClick = () => {
     dispatcher.dispatch(onCtaClick);
@@ -143,13 +73,13 @@ export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
             </div>
           )}
 
-          {stateKeys.length > 0 && (
+          {Object.keys(values).length > 0 && (
             <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4 text-left">
-              <h4 className="font-semibold text-[var(--color-primary)] mb-2">State values after REST action</h4>
-              {stateKeys.map((key) => (
+              <h4 className="font-semibold text-[var(--color-primary)] mb-2">State values after action</h4>
+              {Object.entries(values).map(([key, value]) => (
                 <div key={key} className="mb-2">
                   <p className="text-sm text-gray-500">{key}</p>
-                  <pre className="text-xs bg-gray-50 border border-gray-100 rounded p-2 overflow-auto text-gray-800">{JSON.stringify(restState[key], null, 2) || 'undefined'}</pre>
+                  <pre className="text-xs bg-gray-50 border border-gray-100 rounded p-2 overflow-auto text-gray-800">{JSON.stringify(value, null, 2) || 'undefined'}</pre>
                 </div>
               ))}
             </div>
