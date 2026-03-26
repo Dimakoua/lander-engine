@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { WorkspaceGenerator } from './generate';
 import { Builder } from './build';
-import { LanderConfig, UserLanderConfig } from '@/types/config';
+import { LanderConfig, UserLanderConfig, RoutingConfig } from '@/types/config';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -32,6 +32,18 @@ async function resolveConfig(): Promise<LanderConfig> {
     }
   }
 
+  // Load routing.config.js (domain → campaign mapping)
+  let routingConfig: RoutingConfig | undefined;
+  const routingConfigPath = path.resolve(projectRoot, 'routing.config.js');
+  if (await fs.pathExists(routingConfigPath)) {
+    try {
+      const module = await import(routingConfigPath);
+      routingConfig = module.default || module;
+    } catch (e) {
+      console.warn('Failed to load routing.config.js, domain routing will be skipped');
+    }
+  }
+
   return {
     projectRoot,
     engineRoot,
@@ -40,6 +52,7 @@ async function resolveConfig(): Promise<LanderConfig> {
     actionsDir: 'actions',
     outputDir: 'dist',
     plugins: [],
+    routingConfig,
     ...userConfig,
   } as LanderConfig;
 }
