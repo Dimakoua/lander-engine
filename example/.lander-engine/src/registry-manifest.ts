@@ -27,3 +27,5 @@ import Component_11 from '/Users/dmytro/fun/lp-factory-package/example/component
 registry.registerComponent('UserDataDisplay', Component_11);
 import Component_12 from '/Users/dmytro/fun/lp-factory-package/example/components/UserDataForm.tsx';
 registry.registerComponent('UserDataForm', Component_12);
+import * as Action_0 from '/Users/dmytro/fun/lp-factory-package/example/actions/analytics.ts';
+registry.registerActions(Action_0);

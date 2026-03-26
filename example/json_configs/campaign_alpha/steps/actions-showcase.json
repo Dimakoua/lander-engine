@@ -50,6 +50,11 @@
             "icon": "🎨",
             "title": "ui",
             "description": "Trigger UI operations: scroll, copy, modals, navigation"
+          },
+          {
+            "icon": "🔌",
+            "title": "Custom Actions",
+            "description": "Register your own action handlers in the actions/ directory and call them by type from JSON"
           }
         ]
       }
@@ -392,6 +397,65 @@
                         }
                       }
                     ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Custom Action: logEvent",
+        "subtitle": "actions/analytics.ts exports logEvent and identify — registered automatically from the actions/ directory",
+        "ctaText": "📊 Fire logEvent",
+        "onCtaClick": [
+          {
+            "type": "logEvent",
+            "payload": {
+              "event": "cta_clicked",
+              "properties": { "step": "actions-showcase", "label": "Fire logEvent" }
+            }
+          },
+          {
+            "type": "ui",
+            "payload": {
+              "operation": "copyToClipboard",
+              "params": { "text": "logEvent fired! Open browser DevTools console to see the output." }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "component": "Hero",
+      "props": {
+        "title": "Custom Action: identify",
+        "subtitle": "Identify a user with an ID and traits — dispatched via sequence alongside built-in setState",
+        "ctaText": "👤 Fire identify",
+        "onCtaClick": [
+          {
+            "type": "sequence",
+            "payload": {
+              "actions": [
+                {
+                  "type": "setState",
+                  "payload": { "key": "userId", "value": "usr_demo_001" }
+                },
+                {
+                  "type": "identify",
+                  "payload": {
+                    "userId": "usr_demo_001",
+                    "traits": { "plan": "pro", "source": "lander-engine-demo" }
+                  }
+                },
+                {
+                  "type": "ui",
+                  "payload": {
+                    "operation": "copyToClipboard",
+                    "params": { "text": "identify fired! Check DevTools console and state for userId." }
                   }
                 }
               ]
