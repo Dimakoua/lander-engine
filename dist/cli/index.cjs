@@ -24,11 +24,17 @@ var WorkspaceGenerator = class {
     const templateDir = _path2.default.resolve(this.config.engineRoot, "templates/astro-base");
     if (await _fsextra2.default.pathExists(templateDir)) {
       await _fsextra2.default.emptyDir(this.workspaceDir);
-      await _fsextra2.default.copy(templateDir, this.workspaceDir, {
-        overwrite: true,
-        dereference: true,
-        filter: (src) => !src.includes("node_modules")
-      });
+      try {
+        await _fsextra2.default.copy(templateDir, this.workspaceDir, {
+          overwrite: true,
+          dereference: true
+        });
+      } catch (copyErr) {
+        console.error("Failed to copy Astro template:", copyErr);
+        throw new Error(`Failed to initialize workspace: ${copyErr instanceof Error ? copyErr.message : String(copyErr)}`);
+      }
+    } else {
+      throw new Error(`Lander Engine template not found at ${templateDir}. This usually means the lander-engine package installation is incomplete or corrupted.`);
     }
     await this.generateRegistryManifest();
     await this.generateDomainRouting();
