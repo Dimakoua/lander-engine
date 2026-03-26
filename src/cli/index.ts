@@ -98,6 +98,8 @@ cli
     console.log('Building project...');
     await builder.runAstro('build');
 
+    await builder.logPageSizes();
+
     await runPlugins(config, 'onAfterBuild');
   });
 
