@@ -19,7 +19,7 @@
     "mobile-detection"
   ],
   "files": [
-    "dist",
+    "src",
     "templates",
     "README.md",
     "LICENSE"
