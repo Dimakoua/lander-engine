@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { dispatcher, watchLoadingAction, getLoadingActionState } from 'lander-engine/core';
+import { dispatcher, watchLoadingAction } from 'lander-engine/core';
 
 interface HeroProps {
   title: string;
@@ -10,7 +10,13 @@ interface HeroProps {
 
 // Local React wrapper - consumers can create their own for their framework
 function useLoadingAction(actions: any) {
-  const [state, setState] = useState(() => getLoadingActionState(actions));
+  // Start with empty state — sessionStorage-backed $state must NOT be read during
+  // SSR/hydration or it causes a server/client HTML mismatch.
+  // watchLoadingAction calls the callback synchronously on subscription,
+  // so actual state is picked up immediately after mount.
+  const [state, setState] = useState<{ isLoading: boolean; values: Record<string, any> }>(
+    () => ({ isLoading: false, values: {} })
+  );
   useEffect(() => {
     // Re-subscribe whenever actions change
     const unsubscribe = watchLoadingAction(actions, setState);
