@@ -18,6 +18,81 @@ export class ActionDispatcher {
   }
 
   /**
+   * Resolves an internal step path to the correct variant+mobile URL.
+   *
+   * Accepts a bare step name ("secondary"), an absolute step path
+   * ("/campaign/secondary"), or an already-suffixed path.  Reads
+   * __landerCampaignConfigs (registered by the Astro template) and the stored
+   * variant from localStorage, plus the current user-agent, to produce the
+   * canonical URL the router should navigate to.
+   */
+  private resolveInternalUrl(to: string): string {
+    // Normalise: ensure we always have /campaign/step
+    const toParts = to.replace(/^\//, '').split('/').filter(Boolean);
+    if (toParts.length === 1) {
+      const campaign = window.location.pathname.split('/').filter(Boolean)[0];
+      if (campaign) toParts.unshift(campaign);
+    }
+    if (toParts.length < 2) return to;
+
+    const configs: Record<string, { variants: string[]; hasMobileRoute: boolean }> =
+      (window as any).__landerCampaignConfigs ?? {};
+
+    const campaignId = toParts[0];
+    const config = configs[campaignId];
+    if (!config) return to; // unknown campaign — return as-is
+
+    const { variants, hasMobileRoute } = config;
+
+    // Strip any existing suffixes so we always start from the bare step slug
+    let stepSlug = toParts[toParts.length - 1];
+    const slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, -7) : stepSlug;
+    let baseSlug = slugNoMobile;
+    for (const v of variants) {
+      if (slugNoMobile.endsWith('.' + v)) {
+        baseSlug = slugNoMobile.slice(0, -(v.length + 1));
+        break;
+      }
+    }
+
+    // Determine target variant from localStorage
+    let targetVariant: string | null = null;
+    if (variants.length > 0) {
+      const stored = localStorage.getItem(`lander-variant-${campaignId}`);
+      if (stored && variants.includes(stored)) {
+        targetVariant = stored;
+      } else {
+        targetVariant = variants[Math.floor(Math.random() * variants.length)];
+        localStorage.setItem(`lander-variant-${campaignId}`, targetVariant);
+      }
+    }
+
+    // Determine mobile
+    const isMobile = hasMobileRoute && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent || navigator.vendor || (window as any).opera || ''
+    );
+
+    let targetSlug = baseSlug;
+    if (targetVariant) targetSlug += '.' + targetVariant;
+    if (isMobile)      targetSlug += '.mobile';
+
+    toParts[toParts.length - 1] = targetSlug;
+    return '/' + toParts.join('/');
+  }
+
+  /** Navigate internally using Astro's SPA router when available. */
+  private navigateTo(path: string, replace = false): void {
+    const nav: ((p: string) => void) | undefined = (window as any).__landerNavigate;
+    if (nav) {
+      nav(path);
+    } else if (replace) {
+      window.location.replace(path);
+    } else {
+      window.location.href = path;
+    }
+  }
+
+  /**
    * Evaluates a condition string against the current state.
    */
   private evaluateCondition(condition: string): boolean {
@@ -96,13 +171,8 @@ export class ActionDispatcher {
             window.location.href = to;
           }
         } else {
-          // Internal step navigation logic (Astro View Transitions / router)
-          // For now, simple URL change. In Phase 5, this will be more integrated.
-          if (replace) {
-            window.location.replace(to);
-          } else {
-            window.location.href = to;
-          }
+          const corrected = this.resolveInternalUrl(to);
+          this.navigateTo(corrected, replace);
         }
         break;
       }
@@ -179,8 +249,7 @@ export class ActionDispatcher {
         let targetPath = '/';
 
         if (typeof nextStep === 'string') {
-          // Try to infer campaign from current URL, fallback to payload campaignId
-          const currentPathParts = window.location.pathname.split('/').filter(Boolean); // ['campaign_alpha','secondary']
+          const currentPathParts = window.location.pathname.split('/').filter(Boolean);
           const campaign = params?.campaignId || currentPathParts[0];
 
           if (campaign) {
@@ -193,7 +262,7 @@ export class ActionDispatcher {
           console.warn('goToNextStep requires next step string in params.next');
         }
 
-        window.location.href = targetPath;
+        this.navigateTo(this.resolveInternalUrl(targetPath));
         break;
       }
       // Popup logic will be implemented in Phase 5 with Astro templates

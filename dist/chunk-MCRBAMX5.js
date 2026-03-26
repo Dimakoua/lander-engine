@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; } var _class;// node_modules/nanostores/clean-stores/index.js
+// node_modules/nanostores/clean-stores/index.js
 var clean = /* @__PURE__ */ Symbol("clean");
 
 // node_modules/nanostores/atom/index.js
@@ -161,9 +161,9 @@ function getState(key) {
 }
 
 // src/core/registry.ts
-var Registry = (_class = class {constructor() { _class.prototype.__init.call(this);_class.prototype.__init2.call(this); }
-  __init() {this.components = {}}
-  __init2() {this.actions = {}}
+var Registry = class {
+  components = {};
+  actions = {};
   registerComponent(name, component) {
     this.components[name] = component;
   }
@@ -188,7 +188,7 @@ var Registry = (_class = class {constructor() { _class.prototype.__init.call(thi
   getAllActions() {
     return this.actions;
   }
-}, _class);
+};
 var registry = new Registry();
 
 // src/core/loading.ts
@@ -200,22 +200,22 @@ function extractActionKeys(actions) {
   const stateKeys = /* @__PURE__ */ new Set();
   const walk = (action) => {
     if (!action || typeof action !== "object") return;
-    const loadingKey = _optionalChain([action, 'access', _ => _.payload, 'optionalAccess', _2 => _2.loadingKey]);
+    const loadingKey = action.payload?.loadingKey;
     if (loadingKey) {
       loadingKeys.add(loadingKey);
     } else if (action.type === "rest") {
-      loadingKeys.add(getRestLoadingKey(_optionalChain([action, 'access', _3 => _3.payload, 'optionalAccess', _4 => _4.loadingKey]), _optionalChain([action, 'access', _5 => _5.payload, 'optionalAccess', _6 => _6.stateKey])));
+      loadingKeys.add(getRestLoadingKey(action.payload?.loadingKey, action.payload?.stateKey));
     }
-    const stateKey = _optionalChain([action, 'access', _7 => _7.payload, 'optionalAccess', _8 => _8.stateKey]);
+    const stateKey = action.payload?.stateKey;
     if (stateKey) {
       stateKeys.add(stateKey);
     }
-    if (action.type === "sequence" && Array.isArray(_optionalChain([action, 'access', _9 => _9.payload, 'optionalAccess', _10 => _10.actions]))) {
+    if (action.type === "sequence" && Array.isArray(action.payload?.actions)) {
       action.payload.actions.forEach(walk);
     }
     if (action.type === "conditional") {
-      if (Array.isArray(_optionalChain([action, 'access', _11 => _11.payload, 'optionalAccess', _12 => _12.onTrue]))) action.payload.onTrue.forEach(walk);
-      if (Array.isArray(_optionalChain([action, 'access', _13 => _13.payload, 'optionalAccess', _14 => _14.onFalse]))) action.payload.onFalse.forEach(walk);
+      if (Array.isArray(action.payload?.onTrue)) action.payload.onTrue.forEach(walk);
+      if (Array.isArray(action.payload?.onFalse)) action.payload.onFalse.forEach(walk);
     }
   };
   if (Array.isArray(actions)) {
@@ -271,6 +271,66 @@ var ActionDispatcher = class {
       }
     } else {
       await this.executeAction(action);
+    }
+  }
+  /**
+   * Resolves an internal step path to the correct variant+mobile URL.
+   *
+   * Accepts a bare step name ("secondary"), an absolute step path
+   * ("/campaign/secondary"), or an already-suffixed path.  Reads
+   * __landerCampaignConfigs (registered by the Astro template) and the stored
+   * variant from localStorage, plus the current user-agent, to produce the
+   * canonical URL the router should navigate to.
+   */
+  resolveInternalUrl(to) {
+    const toParts = to.replace(/^\//, "").split("/").filter(Boolean);
+    if (toParts.length === 1) {
+      const campaign = window.location.pathname.split("/").filter(Boolean)[0];
+      if (campaign) toParts.unshift(campaign);
+    }
+    if (toParts.length < 2) return to;
+    const configs = window.__landerCampaignConfigs ?? {};
+    const campaignId = toParts[0];
+    const config = configs[campaignId];
+    if (!config) return to;
+    const { variants, hasMobileRoute } = config;
+    let stepSlug = toParts[toParts.length - 1];
+    const slugNoMobile = stepSlug.endsWith(".mobile") ? stepSlug.slice(0, -7) : stepSlug;
+    let baseSlug = slugNoMobile;
+    for (const v of variants) {
+      if (slugNoMobile.endsWith("." + v)) {
+        baseSlug = slugNoMobile.slice(0, -(v.length + 1));
+        break;
+      }
+    }
+    let targetVariant = null;
+    if (variants.length > 0) {
+      const stored = localStorage.getItem(`lander-variant-${campaignId}`);
+      if (stored && variants.includes(stored)) {
+        targetVariant = stored;
+      } else {
+        targetVariant = variants[Math.floor(Math.random() * variants.length)];
+        localStorage.setItem(`lander-variant-${campaignId}`, targetVariant);
+      }
+    }
+    const isMobile = hasMobileRoute && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent || navigator.vendor || window.opera || ""
+    );
+    let targetSlug = baseSlug;
+    if (targetVariant) targetSlug += "." + targetVariant;
+    if (isMobile) targetSlug += ".mobile";
+    toParts[toParts.length - 1] = targetSlug;
+    return "/" + toParts.join("/");
+  }
+  /** Navigate internally using Astro's SPA router when available. */
+  navigateTo(path, replace = false) {
+    const nav = window.__landerNavigate;
+    if (nav) {
+      nav(path);
+    } else if (replace) {
+      window.location.replace(path);
+    } else {
+      window.location.href = path;
     }
   }
   /**
@@ -335,11 +395,8 @@ var ActionDispatcher = class {
             window.location.href = to;
           }
         } else {
-          if (replace) {
-            window.location.replace(to);
-          } else {
-            window.location.href = to;
-          }
+          const corrected = this.resolveInternalUrl(to);
+          this.navigateTo(corrected, replace);
         }
         break;
       }
@@ -370,17 +427,17 @@ var ActionDispatcher = class {
     switch (operation) {
       case "scrollTo":
         window.scrollTo({
-          top: _optionalChain([params, 'optionalAccess', _15 => _15.top]) || 0,
-          behavior: _optionalChain([params, 'optionalAccess', _16 => _16.behavior]) || "smooth"
+          top: params?.top || 0,
+          behavior: params?.behavior || "smooth"
         });
         break;
       case "copyToClipboard":
-        if (_optionalChain([params, 'optionalAccess', _17 => _17.text])) {
+        if (params?.text) {
           navigator.clipboard.writeText(params.text);
         }
         break;
       case "openPopup": {
-        const popupId = _optionalChain([params, 'optionalAccess', _18 => _18.popupId]);
+        const popupId = params?.popupId;
         if (!popupId) {
           console.warn("openPopup requires popupId in params");
           return;
@@ -394,7 +451,7 @@ var ActionDispatcher = class {
         break;
       }
       case "closePopup": {
-        const popupId = _optionalChain([params, 'optionalAccess', _19 => _19.popupId]);
+        const popupId = params?.popupId;
         if (!popupId) {
           console.warn("closePopup requires popupId in params");
           return;
@@ -406,11 +463,11 @@ var ActionDispatcher = class {
         break;
       }
       case "goToNextStep": {
-        const nextStep = _optionalChain([params, 'optionalAccess', _20 => _20.next]);
+        const nextStep = params?.next;
         let targetPath = "/";
         if (typeof nextStep === "string") {
           const currentPathParts = window.location.pathname.split("/").filter(Boolean);
-          const campaign = _optionalChain([params, 'optionalAccess', _21 => _21.campaignId]) || currentPathParts[0];
+          const campaign = params?.campaignId || currentPathParts[0];
           if (campaign) {
             targetPath = `/${campaign}/${nextStep}`;
           } else {
@@ -420,7 +477,7 @@ var ActionDispatcher = class {
         } else {
           console.warn("goToNextStep requires next step string in params.next");
         }
-        window.location.href = targetPath;
+        this.navigateTo(this.resolveInternalUrl(targetPath));
         break;
       }
     }
@@ -428,16 +485,16 @@ var ActionDispatcher = class {
 };
 var dispatcher = new ActionDispatcher();
 
-
-
-
-
-
-
-
-
-
-
-
-exports.$state = $state; exports.hydrateState = hydrateState; exports.setState = setState; exports.toggleState = toggleState; exports.getState = getState; exports.registry = registry; exports.watchLoadingAction = watchLoadingAction; exports.getLoadingActionState = getLoadingActionState; exports.ActionDispatcher = ActionDispatcher; exports.dispatcher = dispatcher;
-//# sourceMappingURL=chunk-XPKDKAIX.cjs.map
+export {
+  $state,
+  hydrateState,
+  setState,
+  toggleState,
+  getState,
+  registry,
+  watchLoadingAction,
+  getLoadingActionState,
+  ActionDispatcher,
+  dispatcher
+};
+//# sourceMappingURL=chunk-MCRBAMX5.js.map

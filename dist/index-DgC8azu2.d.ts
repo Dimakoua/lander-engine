@@ -82,6 +82,18 @@ declare class ActionDispatcher {
      */
     dispatch(action: Action | Action[]): Promise<void>;
     /**
+     * Resolves an internal step path to the correct variant+mobile URL.
+     *
+     * Accepts a bare step name ("secondary"), an absolute step path
+     * ("/campaign/secondary"), or an already-suffixed path.  Reads
+     * __landerCampaignConfigs (registered by the Astro template) and the stored
+     * variant from localStorage, plus the current user-agent, to produce the
+     * canonical URL the router should navigate to.
+     */
+    private resolveInternalUrl;
+    /** Navigate internally using Astro's SPA router when available. */
+    private navigateTo;
+    /**
      * Evaluates a condition string against the current state.
      */
     private evaluateCondition;

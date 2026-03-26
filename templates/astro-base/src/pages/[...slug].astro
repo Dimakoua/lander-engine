@@ -1,6 +1,7 @@
 ---
 import { ConfigParser, resolveCascadingConfig } from 'lander-engine/resolver';
 import { hydrateState } from 'lander-engine/core';
+import { ViewTransitions } from 'astro:transitions';
 import '../registry-manifest'; 
 import Registry from '../Registry.astro';
 import ModalsContainer from '../ModalsContainer.astro';
@@ -211,6 +212,7 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     <meta name="description" content={step.seo?.description || config.seo.description} />
     <!-- Hide until redirect check completes to prevent flash of wrong URL -->
     <style>body { visibility: hidden; }</style>
+    <ViewTransitions />
   </head>
   <body style={themeVars}>
     {layout?.header && (
@@ -238,6 +240,140 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     </script>
 
     <!--
+      SPA navigation helpers.
+
+      Two-part strategy:
+        1. is:inline script (below) registers campaign config and immediately
+           shows the body when the URL is already correct.  No hard redirects.
+        2. This module script owns ALL redirects (via navigate()) and link
+           rewriting so there is never a location.replace() hard reload.
+    -->
+    <script>
+      import { navigate } from 'astro:transitions/client';
+
+      // Expose helpers for the action dispatcher (core package has no direct
+      // access to Astro's navigate(), so it calls through these globals).
+      (window as any).__landerNavigate = navigate;
+      (window as any).__landerResolveUrl = resolveStepUrl;
+
+      function _isMobileDevice(): boolean {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent || navigator.vendor || (window as any).opera || ''
+        );
+      }
+
+      /** Returns the corrected same-origin pathname, or null if already correct. */
+      function resolveStepUrl(pathname: string): string | null {
+        const configs: Record<string, { variants: string[]; hasMobileRoute: boolean }> =
+          (window as any).__landerCampaignConfigs ?? {};
+
+        const parts = pathname.replace(/\/$/, '').split('/').filter(Boolean);
+        if (parts.length < 2) return null;
+
+        const campaignId = parts[0];
+        const config = configs[campaignId];
+        if (!config) return null;
+
+        const { variants, hasMobileRoute } = config;
+        const stepSlug = parts[parts.length - 1];
+        const slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, -7) : stepSlug;
+
+        let currentVariant: string | null = null;
+        let baseStepSlug = slugNoMobile;
+        for (const v of variants) {
+          if (slugNoMobile.endsWith('.' + v)) {
+            currentVariant = v;
+            baseStepSlug = slugNoMobile.slice(0, -(v.length + 1));
+            break;
+          }
+        }
+
+        let targetVariant = currentVariant;
+        if (variants.length > 0) {
+          const stored = localStorage.getItem(`lander-variant-${campaignId}`);
+          if (stored && variants.includes(stored)) {
+            targetVariant = stored;
+          } else if (!currentVariant) {
+            targetVariant = variants[Math.floor(Math.random() * variants.length)];
+            localStorage.setItem(`lander-variant-${campaignId}`, targetVariant);
+          }
+        }
+
+        const targetMobile = hasMobileRoute && _isMobileDevice();
+
+        let targetSlug = baseStepSlug;
+        if (targetVariant) targetSlug += '.' + targetVariant;
+        if (targetMobile)  targetSlug += '.mobile';
+
+        if (targetSlug === stepSlug) return null;
+        parts[parts.length - 1] = targetSlug;
+        return '/' + parts.join('/');
+      }
+
+      /** Patch every same-origin <a> on the page with the correct suffix. */
+      function rewriteLinks(): void {
+        if (location.search.includes('no-redirect')) return;
+        document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(a => {
+          try {
+            const url = new URL(a.href);
+            if (url.origin !== location.origin) return;
+            const corrected = resolveStepUrl(url.pathname);
+            if (corrected) a.href = corrected + url.search + url.hash;
+          } catch { /* non-parseable href */ }
+        });
+      }
+
+      // --- Click interceptor (capture phase, fires before Astro's bubble handler) ---
+      // Handles dynamically-added links that rewriteLinks() may have missed.
+      // stopImmediatePropagation() prevents Astro's router from also handling
+      // the same click and causing a double navigation.
+      document.addEventListener('click', (e: MouseEvent) => {
+        if (location.search.includes('no-redirect')) return;
+        const a = (e.target as Element).closest('a');
+        if (!a) return;
+        let url: URL;
+        try { url = new URL((a as HTMLAnchorElement).href); } catch { return; }
+        if (url.origin !== location.origin) return;
+        const corrected = resolveStepUrl(url.pathname);
+        if (!corrected) return;
+        // Steal the event: we will navigate to the correct URL ourselves.
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        navigate(corrected + url.search + url.hash);
+      }, { capture: true });
+
+      // --- After every View Transition swap ---
+      // Only reveal the body when the current URL is already correct.
+      // If a redirect is still needed, keep the body hidden — astro:page-load
+      // will call navigate() and the *next* after-swap will reveal the body on
+      // the correct page.  This prevents any flash of the un-suffixed page.
+      document.addEventListener('astro:after-swap', () => {
+        if (!resolveStepUrl(location.pathname)) {
+          document.body.style.visibility = 'visible';
+        }
+      });
+
+      // --- astro:page-load: runs after initial load AND after every transition ---
+      // On initial load: redirect via navigate() if URL is wrong (smooth VT, no
+      // hard reload), then show body and rewrite links once correct.
+      // On post-transition load: URL is already correct; just rewrite links.
+      document.addEventListener('astro:page-load', () => {
+        if (location.search.includes('no-redirect')) {
+          document.body.style.visibility = 'visible';
+          return;
+        }
+        const corrected = resolveStepUrl(location.pathname);
+        if (corrected) {
+          // Body stays hidden — astro:after-swap will reveal it on the correct page.
+          navigate(corrected + location.search);
+          return;
+        }
+        document.body.style.visibility = 'visible';
+        rewriteLinks();
+      });
+    </script>
+
+    <!--
       Unified client-side routing script.
       Handles two concerns in one pass to avoid double-redirects:
         1. A/B variant assignment — randomly assigns the user to a variant on first visit
@@ -251,19 +387,29 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
         /campaign_alpha/main.variant_a
         /campaign_alpha/main.variant_a.mobile
     -->
+    <!--
+      Inline script: registers this page's campaign config synchronously so it is
+      available to the module script above as soon as it runs.  Also shows the
+      body immediately when the URL is already correct, avoiding any visible delay.
+      When the URL needs fixing the body stays hidden — the module script handles
+      the redirect via navigate() so there is never a hard location.replace().
+    -->
     <script is:inline define:vars={{ variants, hasMobileRoute, campaignId }}>
       (function () {
-        function show() { document.body.style.visibility = 'visible'; }
+        // Register config for the SPA helpers in the module script.
+        window.__landerCampaignConfigs = window.__landerCampaignConfigs || {};
+        window.__landerCampaignConfigs[campaignId] = { variants: variants, hasMobileRoute: hasMobileRoute };
 
-        if (window.location.search.includes('no-redirect')) { show(); return; }
+        if (window.location.search.includes('no-redirect')) {
+          document.body.style.visibility = 'visible';
+          return;
+        }
 
         var pathname = window.location.pathname.replace(/\/$/, '');
         var parts = pathname.split('/');
-        var stepSlug = parts[parts.length - 1]; // e.g. "main.variant_a.mobile"
+        var stepSlug = parts[parts.length - 1];
 
-        // --- Parse current URL suffixes ---
-        var isMobileUrl = stepSlug.endsWith('.mobile');
-        var slugNoMobile = isMobileUrl ? stepSlug.slice(0, stepSlug.length - 7) : stepSlug;
+        var slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, stepSlug.length - 7) : stepSlug;
 
         var currentVariant = null;
         var baseStepSlug = slugNoMobile;
@@ -276,21 +422,17 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
           }
         }
 
-        // --- Determine target variant ---
         var targetVariant = currentVariant;
         if (variants.length > 0) {
-          var storageKey = 'lander-variant-' + campaignId;
-          var stored = localStorage.getItem(storageKey);
+          var stored = localStorage.getItem('lander-variant-' + campaignId);
           if (stored !== null && variants.indexOf(stored) !== -1) {
             targetVariant = stored;
-          } else {
-            // Random assignment — pick one of the declared variants
+          } else if (!currentVariant) {
             targetVariant = variants[Math.floor(Math.random() * variants.length)];
-            localStorage.setItem(storageKey, targetVariant);
+            localStorage.setItem('lander-variant-' + campaignId, targetVariant);
           }
         }
 
-        // --- Determine target device ---
         function isMobileDevice() {
           return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
             navigator.userAgent || navigator.vendor || window.opera
@@ -298,17 +440,16 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
         }
         var targetMobile = hasMobileRoute && isMobileDevice();
 
-        // --- Build target slug and redirect if needed ---
         var targetSlug = baseStepSlug;
         if (targetVariant) targetSlug += '.' + targetVariant;
-        if (targetMobile) targetSlug += '.mobile';
+        if (targetMobile)  targetSlug += '.mobile';
 
-        if (targetSlug !== stepSlug) {
-          parts[parts.length - 1] = targetSlug;
-          // Use replace() so the intermediate URL is not added to browser history
-          window.location.replace(parts.join('/') + window.location.search);
-        } else {
-          show();
+        // If the URL is already correct, reveal the body right now — before the
+        // (deferred) module script even loads, for the fastest possible display.
+        // If wrong, keep it hidden; the module script's astro:page-load will call
+        // navigate() for a smooth View Transition to the correct URL.
+        if (targetSlug === stepSlug) {
+          document.body.style.visibility = 'visible';
         }
       })();
     </script>
