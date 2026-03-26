@@ -127,14 +127,14 @@ export default function Hero({ title, subtitle, ctaText, onCtaClick }) {
         </p>
         
         <div>
-          <button
+          {ctaText && (<button
             onClick={handleCTAClick}
             disabled={isLoading}
             className={`inline-block px-10 py-5 text-white text-lg font-bold rounded-xl shadow-lg transition-all duration-300 transform ${isLoading ? 'bg-gray-300 cursor-not-allowed' : 'bg-gradient-to-r from-[var(--color-primary)] to-blue-600 hover:shadow-2xl hover:scale-105'}`}
             style={{ borderRadius: 'var(--token-buttonRadius)' }}
           >
             {isLoading ? `${ctaText} (loading...)` : ctaText}
-          </button>
+          </button>)}
 
           {isLoading && (
             <div className="mt-4 inline-flex items-center space-x-2 text-blue-700 font-semibold">
