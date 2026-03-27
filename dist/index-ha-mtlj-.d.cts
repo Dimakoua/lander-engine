@@ -1,13 +1,19 @@
 /**
+ * Recursive partial type (deeply optional) for merge overrides.
+ */
+type DeepPartial<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+/**
  * Simple deep merge utility for JSON objects.
  * Prioritizes properties from the 'source' object.
  */
-declare function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T;
+declare function deepMerge<T extends Record<string, any>>(target: T, source: DeepPartial<T>): T;
 /**
  * Resolves the final configuration by applying overrides in priority order.
  * Priority: Base < Device < Variant < Variant+Device
  */
-declare function resolveCascadingConfig<T extends Record<string, any>>(base: T, deviceOverride?: Partial<T>, variantOverride?: Partial<T>, variantDeviceOverride?: Partial<T>): T;
+declare function resolveCascadingConfig<T extends Record<string, any>>(base: T, deviceOverride?: DeepPartial<T>, variantOverride?: DeepPartial<T>, variantDeviceOverride?: DeepPartial<T>): T;
 
 interface ThemeConfig {
     colors: Record<string, string>;
@@ -118,4 +124,4 @@ declare class ConfigParser {
     loadOverrides(campaignId: string, subPath: string): Promise<Partial<CampaignConfig>>;
 }
 
-export { type CampaignConfig as C, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, resolveCascadingConfig as r };
+export { type CampaignConfig as C, type DeepPartial as D, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, resolveCascadingConfig as r };

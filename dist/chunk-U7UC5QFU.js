@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }// src/resolver/cascade.ts
+// src/resolver/cascade.ts
 function deepMerge(target, source) {
   const result = { ...target };
   for (const key in source) {
@@ -32,19 +32,19 @@ function resolveCascadingConfig(base, deviceOverride, variantOverride, variantDe
 }
 
 // src/resolver/parser.ts
-var _fsextra = require('fs-extra'); var _fsextra2 = _interopRequireDefault(_fsextra);
-var _path = require('path'); var _path2 = _interopRequireDefault(_path);
-var _fastglob = require('fast-glob'); var _fastglob2 = _interopRequireDefault(_fastglob);
+import fs from "fs-extra";
+import path from "path";
+import glob from "fast-glob";
 var ConfigParser = class {
-  
+  baseDir;
   constructor(baseDir) {
-    this.baseDir = _path2.default.resolve(process.cwd(), baseDir);
+    this.baseDir = path.resolve(process.cwd(), baseDir);
   }
   /**
    * Scans the base directory for campaign folders.
    */
   async getCampaigns() {
-    const folders = await _fastglob2.default.call(void 0, "*", {
+    const folders = await glob("*", {
       cwd: this.baseDir,
       onlyDirectories: true,
       deep: 1
@@ -56,8 +56,8 @@ var ConfigParser = class {
    * Variants are any subdirectories that are not reserved names ('mobile', 'steps').
    */
   async getVariants(campaignId) {
-    const campaignPath = _path2.default.join(this.baseDir, campaignId);
-    const folders = await _fastglob2.default.call(void 0, "*", {
+    const campaignPath = path.join(this.baseDir, campaignId);
+    const folders = await glob("*", {
       cwd: campaignPath,
       onlyDirectories: true,
       deep: 1
@@ -69,12 +69,12 @@ var ConfigParser = class {
    * Reads and parses a JSON file with descriptive error handling.
    */
   async readJson(filePath) {
-    const fullPath = _path2.default.resolve(this.baseDir, filePath);
-    if (!await _fsextra2.default.pathExists(fullPath)) {
+    const fullPath = path.resolve(this.baseDir, filePath);
+    if (!await fs.pathExists(fullPath)) {
       return null;
     }
     try {
-      const content = await _fsextra2.default.readJson(fullPath);
+      const content = await fs.readJson(fullPath);
       return content;
     } catch (error) {
       throw new Error(`Failed to parse JSON at ${filePath}: ${error.message}`);
@@ -95,10 +95,10 @@ var ConfigParser = class {
     if (!flow.initialStep) throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
     if (!theme) throw new Error(`Missing mandatory theme.json for campaign: ${campaignId}`);
     if (!theme.colors) throw new Error(`theme.json must have a 'colors' object for campaign: ${campaignId}`);
-    const stepFiles = await _fastglob2.default.call(void 0, `${campaignId}/steps/*.json`, { cwd: this.baseDir });
+    const stepFiles = await glob(`${campaignId}/steps/*.json`, { cwd: this.baseDir });
     const steps = {};
     for (const stepFile of stepFiles) {
-      const stepName = _path2.default.basename(stepFile, ".json");
+      const stepName = path.basename(stepFile, ".json");
       const stepConfig = await this.readJson(stepFile);
       if (stepConfig) {
         if (!stepConfig.sections || !Array.isArray(stepConfig.sections)) {
@@ -132,10 +132,10 @@ var ConfigParser = class {
       this.readJson(`${relPath}/seo.json`),
       this.readJson(`${relPath}/state.json`)
     ]);
-    const stepFiles = await _fastglob2.default.call(void 0, `${relPath}/steps/*.json`, { cwd: this.baseDir });
+    const stepFiles = await glob(`${relPath}/steps/*.json`, { cwd: this.baseDir });
     const steps = {};
     for (const stepFile of stepFiles) {
-      const stepName = _path2.default.basename(stepFile, ".json");
+      const stepName = path.basename(stepFile, ".json");
       const stepConfig = await this.readJson(stepFile);
       if (stepConfig) {
         steps[stepName] = stepConfig;
@@ -152,9 +152,9 @@ var ConfigParser = class {
   }
 };
 
-
-
-
-
-exports.deepMerge = deepMerge; exports.resolveCascadingConfig = resolveCascadingConfig; exports.ConfigParser = ConfigParser;
-//# sourceMappingURL=chunk-E2OP5JMF.cjs.map
+export {
+  deepMerge,
+  resolveCascadingConfig,
+  ConfigParser
+};
+//# sourceMappingURL=chunk-U7UC5QFU.js.map

@@ -63,8 +63,8 @@ interface ConditionalAction {
     type: 'conditional';
     payload: {
         condition: string;
-        onTrue: Action[];
-        onFalse?: Action[];
+        onTrue: Action | Action[];
+        onFalse?: Action | Action[];
     };
 }
 interface UIAction {
