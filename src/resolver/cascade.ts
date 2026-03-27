@@ -1,8 +1,15 @@
 /**
+ * Recursive partial type (deeply optional) for merge overrides.
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+/**
  * Simple deep merge utility for JSON objects.
  * Prioritizes properties from the 'source' object.
  */
-export function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+export function deepMerge<T extends Record<string, any>>(target: T, source: DeepPartial<T>): T {
   const result = { ...target };
 
   for (const key in source) {
@@ -35,9 +42,9 @@ export function deepMerge<T extends Record<string, any>>(target: T, source: Part
  */
 export function resolveCascadingConfig<T extends Record<string, any>>(
   base: T,
-  deviceOverride?: Partial<T>,
-  variantOverride?: Partial<T>,
-  variantDeviceOverride?: Partial<T>
+  deviceOverride?: DeepPartial<T>,
+  variantOverride?: DeepPartial<T>,
+  variantDeviceOverride?: DeepPartial<T>
 ): T {
   let resolved = { ...base };
 

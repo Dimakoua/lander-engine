@@ -56,8 +56,8 @@ export interface ConditionalAction {
   type: 'conditional';
   payload: {
     condition: string; // Expression or state key
-    onTrue: Action[];
-    onFalse?: Action[];
+    onTrue: Action | Action[];
+    onFalse?: Action | Action[];
   };
 }
 
