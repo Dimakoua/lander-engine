@@ -103,5 +103,14 @@ cli
     await runPlugins(config, 'onAfterBuild');
   });
 
+cli
+  .command('preview', 'Serve the built production project with compression support')
+  .option('--port <port>', 'Port to run the preview server on', { default: 4321 })
+  .action(async (options) => {
+    const config = await resolveConfig();
+    const builder = new Builder(config);
+    await builder.preview(options.port);
+  });
+
 cli.help();
 cli.parse();

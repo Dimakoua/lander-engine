@@ -850,6 +850,7 @@ Usage: lander <command> [options]
 |---|---|
 | `lander dev` | Generate workspace and start Astro dev server with HMR |
 | `lander build` | Generate workspace, build static site, fire `onAfterBuild` plugins |
+| `lander preview` | Serve the built production project with Gzip and Brotli support |
 
 **Environment variables:**
 

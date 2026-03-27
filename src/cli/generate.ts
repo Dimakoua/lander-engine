@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import glob from 'fast-glob';
+import { pathToFileURL } from 'url';
 import { LanderConfig } from '@/types/config';
 
 export class WorkspaceGenerator {
@@ -30,6 +31,16 @@ export class WorkspaceGenerator {
           overwrite: true,
           dereference: true,
         });
+
+        // Resolve absolute paths for integrations to ensure Astro can find them even if not hoisted
+        const compressorPath = this.resolvePackage('astro-compressor');
+
+        const configPath = path.join(this.workspaceDir, 'astro.config.mjs');
+        let configContent = await fs.readFile(configPath, 'utf8');
+        configContent = configContent.replace('{{ASTRO_COMPRESSOR_PATH}}', compressorPath);
+        
+        await fs.writeFile(configPath, configContent);
+
       } catch (copyErr) {
         console.error('Failed to copy Astro template:', copyErr);
         throw new Error(`Failed to initialize workspace: ${copyErr instanceof Error ? copyErr.message : String(copyErr)}`);
@@ -43,6 +54,23 @@ export class WorkspaceGenerator {
 
     // 3. Generate domain routing entry point (if routing.config.js is present)
     await this.generateDomainRouting();
+  }
+
+  /**
+   * Resolves a package path relative to the engine root as a file URL.
+   */
+  private resolvePackage(packageName: string): string {
+    try {
+      // Try to find it in the engine's node_modules
+      const packagePath = path.join(this.config.engineRoot, 'node_modules', packageName);
+      if (fs.existsSync(packagePath)) {
+        return pathToFileURL(packagePath).toString();
+      }
+      // Fallback to plain name if not found (might be hoisted in user project)
+      return packageName;
+    } catch {
+      return packageName;
+    }
   }
 
   /**

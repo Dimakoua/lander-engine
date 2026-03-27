@@ -65,27 +65,97 @@ export class Builder {
     try {
       const allFiles = await walk(distDir);
       const htmlFiles = allFiles.filter((f) => f.endsWith('.html'));
+      
       if (htmlFiles.length === 0) {
         console.log('No generated HTML pages found to report sizes.');
         return;
       }
 
-      let totalSize = 0;
-      console.log('Generated page sizes:');
+      console.log('\nGenerated page sizes:');
+      let totalRaw = 0;
+      let totalGzip = 0;
+      let totalBrotli = 0;
+
       for (const file of htmlFiles) {
         const stats = await fs.stat(file);
-        const size = stats.size;
-        totalSize += size;
+        const rawSize = stats.size;
+        totalRaw += rawSize;
 
         const relativePath = pathLib.relative(distDir, file).replace(/\\/g, '/');
-        const kb = (size / 1024).toFixed(2);
-        console.log(` - /${relativePath} (${kb} KB)`);
+        
+        // Check for compressed versions
+        let gzipSize: number | null = null;
+        let brotliSize: number | null = null;
+
+        try {
+          const gzStats = await fs.stat(file + '.gz');
+          gzipSize = gzStats.size;
+          totalGzip += gzipSize;
+        } catch {}
+
+        try {
+          const brStats = await fs.stat(file + '.br');
+          brotliSize = brStats.size;
+          totalBrotli += brotliSize;
+        } catch {}
+
+        const rawKb = (rawSize / 1024).toFixed(2);
+        let info = ` - /${relativePath} (${rawKb} KB)`;
+        
+        if (brotliSize) {
+          const brKb = (brotliSize / 1024).toFixed(2);
+          const ratio = ((1 - brotliSize / rawSize) * 100).toFixed(0);
+          info += ` → Brotli: ${brKb} KB (-${ratio}%)`;
+        } else if (gzipSize) {
+          const gzKb = (gzipSize / 1024).toFixed(2);
+          const ratio = ((1 - gzipSize / rawSize) * 100).toFixed(0);
+          info += ` → Gzip: ${gzKb} KB (-${ratio}%)`;
+        }
+
+        console.log(info);
       }
 
-      console.log(`Total HTML size: ${(totalSize / 1024).toFixed(2)} KB`);
+      console.log('---');
+      console.log(`Total HTML Raw:    ${(totalRaw / 1024).toFixed(2)} KB`);
+      if (totalBrotli > 0) {
+        console.log(`Total HTML Brotli: ${(totalBrotli / 1024).toFixed(2)} KB (-${((1 - totalBrotli / totalRaw) * 100).toFixed(0)}%)`);
+      } else if (totalGzip > 0) {
+        console.log(`Total HTML Gzip:   ${(totalGzip / 1024).toFixed(2)} KB (-${((1 - totalGzip / totalRaw) * 100).toFixed(0)}%)`);
+      }
+      console.log('');
     } catch (err) {
       console.warn('Could not compute page sizes:', err);
     }
+  }
+
+  /**
+   * Starts a preview server for the built project with compression support.
+   */
+  async preview(port: number = 4321) {
+    const distDir = path.resolve(this.workspaceDir, 'dist');
+    const fs = await import('fs');
+
+    if (!fs.existsSync(distDir)) {
+      throw new Error(`Build directory not found at ${distDir}. Run 'lander build' first.`);
+    }
+
+    // Dynamic import to avoid CJS/ESM issues with sirv if necessary, but sirv is standard
+    const sirv = (await import('sirv')).default;
+    const http = await import('http');
+
+    const server = sirv(distDir, {
+      dev: false,
+      gzip: true,
+      brotli: true,
+      single: false,
+      dotfiles: true,
+    });
+
+    http.createServer(server).listen(port, (err?: any) => {
+      if (err) throw err;
+      console.log(`\n🚀 Preview server running at http://localhost:${port}`);
+      console.log(`Serving with Gzip and Brotli support from: ${distDir}\n`);
+    });
   }
 }
 

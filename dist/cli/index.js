@@ -9,6 +9,7 @@ import fs2 from "fs-extra";
 import fs from "fs-extra";
 import path from "path";
 import glob from "fast-glob";
+import { pathToFileURL } from "url";
 var WorkspaceGenerator = class {
   config;
   workspaceDir;
@@ -29,6 +30,11 @@ var WorkspaceGenerator = class {
           overwrite: true,
           dereference: true
         });
+        const compressorPath = this.resolvePackage("astro-compressor");
+        const configPath = path.join(this.workspaceDir, "astro.config.mjs");
+        let configContent = await fs.readFile(configPath, "utf8");
+        configContent = configContent.replace("{{ASTRO_COMPRESSOR_PATH}}", compressorPath);
+        await fs.writeFile(configPath, configContent);
       } catch (copyErr) {
         console.error("Failed to copy Astro template:", copyErr);
         throw new Error(`Failed to initialize workspace: ${copyErr instanceof Error ? copyErr.message : String(copyErr)}`);
@@ -38,6 +44,20 @@ var WorkspaceGenerator = class {
     }
     await this.generateRegistryManifest();
     await this.generateDomainRouting();
+  }
+  /**
+   * Resolves a package path relative to the engine root as a file URL.
+   */
+  resolvePackage(packageName) {
+    try {
+      const packagePath = path.join(this.config.engineRoot, "node_modules", packageName);
+      if (fs.existsSync(packagePath)) {
+        return pathToFileURL(packagePath).toString();
+      }
+      return packageName;
+    } catch {
+      return packageName;
+    }
   }
   /**
    * Scans user directories and generates a manifest for the runtime registry.
@@ -232,20 +252,79 @@ var Builder = class {
         console.log("No generated HTML pages found to report sizes.");
         return;
       }
-      let totalSize = 0;
-      console.log("Generated page sizes:");
+      console.log("\nGenerated page sizes:");
+      let totalRaw = 0;
+      let totalGzip = 0;
+      let totalBrotli = 0;
       for (const file of htmlFiles) {
         const stats = await fs3.stat(file);
-        const size = stats.size;
-        totalSize += size;
+        const rawSize = stats.size;
+        totalRaw += rawSize;
         const relativePath = pathLib.relative(distDir, file).replace(/\\/g, "/");
-        const kb = (size / 1024).toFixed(2);
-        console.log(` - /${relativePath} (${kb} KB)`);
+        let gzipSize = null;
+        let brotliSize = null;
+        try {
+          const gzStats = await fs3.stat(file + ".gz");
+          gzipSize = gzStats.size;
+          totalGzip += gzipSize;
+        } catch {
+        }
+        try {
+          const brStats = await fs3.stat(file + ".br");
+          brotliSize = brStats.size;
+          totalBrotli += brotliSize;
+        } catch {
+        }
+        const rawKb = (rawSize / 1024).toFixed(2);
+        let info = ` - /${relativePath} (${rawKb} KB)`;
+        if (brotliSize) {
+          const brKb = (brotliSize / 1024).toFixed(2);
+          const ratio = ((1 - brotliSize / rawSize) * 100).toFixed(0);
+          info += ` \u2192 Brotli: ${brKb} KB (-${ratio}%)`;
+        } else if (gzipSize) {
+          const gzKb = (gzipSize / 1024).toFixed(2);
+          const ratio = ((1 - gzipSize / rawSize) * 100).toFixed(0);
+          info += ` \u2192 Gzip: ${gzKb} KB (-${ratio}%)`;
+        }
+        console.log(info);
       }
-      console.log(`Total HTML size: ${(totalSize / 1024).toFixed(2)} KB`);
+      console.log("---");
+      console.log(`Total HTML Raw:    ${(totalRaw / 1024).toFixed(2)} KB`);
+      if (totalBrotli > 0) {
+        console.log(`Total HTML Brotli: ${(totalBrotli / 1024).toFixed(2)} KB (-${((1 - totalBrotli / totalRaw) * 100).toFixed(0)}%)`);
+      } else if (totalGzip > 0) {
+        console.log(`Total HTML Gzip:   ${(totalGzip / 1024).toFixed(2)} KB (-${((1 - totalGzip / totalRaw) * 100).toFixed(0)}%)`);
+      }
+      console.log("");
     } catch (err) {
       console.warn("Could not compute page sizes:", err);
     }
+  }
+  /**
+   * Starts a preview server for the built project with compression support.
+   */
+  async preview(port = 4321) {
+    const distDir = path2.resolve(this.workspaceDir, "dist");
+    const fs3 = await import("fs");
+    if (!fs3.existsSync(distDir)) {
+      throw new Error(`Build directory not found at ${distDir}. Run 'lander build' first.`);
+    }
+    const sirv = (await import("sirv")).default;
+    const http = await import("http");
+    const server = sirv(distDir, {
+      dev: false,
+      gzip: true,
+      brotli: true,
+      single: false,
+      dotfiles: true
+    });
+    http.createServer(server).listen(port, (err) => {
+      if (err) throw err;
+      console.log(`
+\u{1F680} Preview server running at http://localhost:${port}`);
+      console.log(`Serving with Gzip and Brotli support from: ${distDir}
+`);
+    });
   }
 };
 
@@ -320,6 +399,11 @@ cli.command("build", "Build the static landing pages").action(async () => {
   await builder.runAstro("build");
   await builder.logPageSizes();
   await runPlugins(config, "onAfterBuild");
+});
+cli.command("preview", "Serve the built production project with compression support").option("--port <port>", "Port to run the preview server on", { default: 4321 }).action(async (options) => {
+  const config = await resolveConfig();
+  const builder = new Builder(config);
+  await builder.preview(options.port);
 });
 cli.help();
 cli.parse();
