@@ -4,7 +4,7 @@
   "description": "Configuration-driven JAMstack landing page meta-framework",
   "type": "module",
   "license": "MIT",
-  "author": "Dmytro",
+  "author": "Dmytro Kozin",
   "repository": {
     "type": "git",
     "url": "https://github.com/dmytro/lp-factory-package"
