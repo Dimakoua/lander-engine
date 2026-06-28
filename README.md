@@ -103,6 +103,8 @@ my-project/
 │   └── Footer.astro
 ├── actions/                     # Custom action handlers
 │   └── myActions.ts
+├── assets/                      # Static assets like images, SVGs, fonts, etc.
+│   └── logo.svg
 ├── json_configs/                # Campaign configurations
 │   └── campaign_alpha/
 │       ├── flow.json            # Step routing and modal definitions
@@ -129,6 +131,24 @@ my-project/
 .lander-engine/                  # Managed Astro workspace — auto-generated
 dist/                            # Final static HTML output after `lander build`
 ```
+
+### Using Static Assets
+
+The `assets` directory is natively supported. Any files placed inside the root `assets/` folder (or your custom `assetsDir` path defined in `lander.config.js`) will be automatically copied into the final build environment.
+
+You can securely reference these static assets in your UI components via the globally available `@assets/` path alias.
+
+**Example usage in a React or Astro component:**
+
+```jsx
+import logo from '@assets/logo.svg';
+
+function MyHeader() {
+  return <img src={logo.src || logo} alt="Brand Logo" />;
+}
+```
+
+The bundler will ensure these assets are hashed, compressed, and served efficiently in the `dist` directory on build.
 
 ---
 

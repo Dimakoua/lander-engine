@@ -14,7 +14,8 @@
       "@/cli/*": ["src/cli/*"],
       "@/core/*": ["src/core/*"],
       "@/resolver/*": ["src/resolver/*"],
-      "@/types/*": ["src/types/*"]
+      "@/types/*": ["src/types/*"],
+      "@assets/*": ["src/assets/*", "templates/astro-base/src/assets/*"]
     }
   },
   "include": ["src/**/*"],
