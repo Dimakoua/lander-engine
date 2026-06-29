@@ -235,4 +235,68 @@ describe('ActionDispatcher', () => {
     expect((window as any).__landerResolveUrl).toHaveBeenCalledWith('/welcome/step-2');
     expect((window as any).__landerNavigate).toHaveBeenCalledWith('/welcome/step-2');
   });
+
+  describe('UI Actions', () => {
+    it('should handle scrollTo', async () => {
+      window.scrollTo = vi.fn();
+      const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+      await dispatcher.dispatch({
+        type: 'ui',
+        payload: { operation: 'scrollTo', params: { top: 100, behavior: 'auto' } }
+      });
+      expect(scrollSpy).toHaveBeenCalledWith({ top: 100, behavior: 'auto' });
+      scrollSpy.mockRestore();
+    });
+
+    it('should handle copyToClipboard', async () => {
+      const writeTextSpy = vi.fn();
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextSpy }
+      });
+      await dispatcher.dispatch({
+        type: 'ui',
+        payload: { operation: 'copyToClipboard', params: { text: 'copied!' } }
+      });
+      expect(writeTextSpy).toHaveBeenCalledWith('copied!');
+    });
+
+    it('should handle openPopup and closePopup', async () => {
+      const mockElement = document.createElement('div');
+      mockElement.id = 'modal-test-popup';
+      mockElement.classList.add('modal-hidden');
+      document.body.appendChild(mockElement);
+
+      await dispatcher.dispatch({
+        type: 'ui',
+        payload: { operation: 'openPopup', params: { popupId: 'test-popup' } }
+      });
+      expect(mockElement.classList.contains('modal-hidden')).toBe(false);
+
+      await dispatcher.dispatch({
+        type: 'ui',
+        payload: { operation: 'closePopup', params: { popupId: 'test-popup' } }
+      });
+      expect(mockElement.classList.contains('modal-hidden')).toBe(true);
+
+      document.body.removeChild(mockElement);
+    });
+
+    it('should handle goToNextStep', async () => {
+      window.location.pathname = '/campaign-a/step-1';
+      (window as any).__landerBasePath = undefined;
+      (window as any).__landerCampaignConfigs = {
+        'campaign-a': {
+          variants: [],
+          hasMobileRoute: false,
+        }
+      };
+
+      await dispatcher.dispatch({
+        type: 'ui',
+        payload: { operation: 'goToNextStep', params: { next: 'step-2', campaignId: 'campaign-a' } }
+      });
+
+      expect((window as any).__landerNavigate).toHaveBeenCalledWith('/campaign-a/step-2');
+    });
+  });
 });

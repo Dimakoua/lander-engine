@@ -5,6 +5,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom', // Use jsdom for browser APIs like window, document, etc.
     globals: true, // Allow globals like describe, it, expect
+    server: {
+      deps: {
+        inline: ['html-encoding-sniffer']
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
