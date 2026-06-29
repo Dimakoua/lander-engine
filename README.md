@@ -279,18 +279,63 @@ Binds components to the header and footer slots and injects third-party scripts.
 
 ### `state.json`
 
-An optional configuration file at the root of a campaign directory (or override folders) defining initial global state key/value pairs.
+An optional configuration file at the root of a campaign directory (or override folders) defining initial global state key/value pairs and build-time configuration variables.
 
 ```json
 {
   "userSegment": "guest",
   "isPromoActive": true,
   "discountCode": "WELCOME2026",
-  "cartCount": 0
+  "cartCount": 0,
+  "brandName": "Acme Corp",
+  "supportEmail": "support@acme.com"
 }
 ```
 
-**How initial state works:**
+#### 1. Build-Time Variable Interpolation
+
+Values defined in `state.json` can be referenced in other JSON configuration files (`flow.json`, `theme.json`, `layout.json`, `seo.json`, and `steps/*.json`) using double handlebars syntax (`{{ key }}` or `{{ nested.key }}`).
+
+During configuration resolution (`ConfigParser`), matching variable placeholders are automatically replaced with their corresponding values from `state.json`.
+
+**Usage Examples:**
+
+* **String Interpolation**: Embedded within string values across configurations.
+  ```json
+  // steps/main.json
+  {
+    "seo": {
+      "title": "Welcome to {{ brandName }}",
+      "description": "Contact us at {{ supportEmail }}"
+    }
+  }
+  ```
+
+* **Exact Value / Type Preservation**: If an entire string field matches `{{ key }}`, the exact data type (e.g. `boolean`, `number`, `object`, `array`) from `state.json` is preserved.
+  ```json
+  // steps/main.json
+  {
+    "sections": [
+      {
+        "component": "PromoBanner",
+        "renderIf": "{{ isPromoActive }}",
+        "props": {
+          "code": "{{ discountCode }}"
+        }
+      }
+    ]
+  }
+  ```
+
+* **Nested Path Lookup**: Dot notation can be used to traverse nested objects in `state.json`.
+  ```json
+  // state.json: { "company": { "details": { "name": "Acme" } } }
+  "title": "Welcome to {{ company.details.name }}"
+  ```
+
+---
+
+#### 2. Runtime State & Reactivity
 
 1. **Campaign-Level Base State**: Defined in `campaign_id/state.json` and loaded during campaign initialization (`ConfigParser.loadCampaignBase`).
 2. **Cascading Overrides**: Can be overridden per device (e.g. `mobile/state.json`) or variant (e.g. `variant_b/state.json`). Overrides are deep-merged using priority order (`Base < Device < Variant < Variant+Device`).
