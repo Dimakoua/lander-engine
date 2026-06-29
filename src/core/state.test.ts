@@ -54,4 +54,18 @@ describe('state', () => {
     
     expect(getState('fallback')).toBe('data');
   });
+
+  it('should handle rehydration failures gracefully', () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    window.sessionStorage.setItem('lander-engine-state', 'invalid-json');
+
+    $state.set({});
+
+    expect(getState('fallback')).toBeUndefined();
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'lander-engine: failed to load persisted state',
+      expect.any(SyntaxError)
+    );
+    consoleWarnSpy.mockRestore();
+  });
 });
