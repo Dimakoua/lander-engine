@@ -2,7 +2,11 @@ import { Action } from '@/types/actions';
 import { setState, toggleState, $state } from './state';
 import { registry } from './registry';
 import { getRestLoadingKey } from './loading';
+<<<<<<< HEAD
 import { selectVariant, VariantAllocationConfig } from './experiment';
+=======
+import { telemetry } from './telemetry';
+>>>>>>> main
 
 export class ActionDispatcher {
   /**
@@ -110,6 +114,7 @@ export class ActionDispatcher {
 
   /** Navigate internally using Astro's SPA router when available. */
   private navigateTo(path: string, replace = false): void {
+    telemetry.track('view_step', { path });
     const nav: ((p: string) => void) | undefined = (window as any).__landerNavigate;
     if (nav) {
       nav(path);
@@ -178,6 +183,7 @@ export class ActionDispatcher {
           // Clear loading state on success
           setState(loadKey, false);
           
+          telemetry.track('submit_lead', { url });
           if (onSuccess) await this.dispatch(onSuccess);
         } catch (error) {
           console.error(`REST Action failed: ${url}`, error);
@@ -194,6 +200,7 @@ export class ActionDispatcher {
         const { to, replace, operation, type } = action.payload;
         // Prefer 'operation', fallback to deprecated 'type', default to 'step'
         const navType = operation ?? type ?? 'step';
+        telemetry.track('click_cta', { to });
         if (navType === 'external') {
           if (replace) {
             window.location.replace(to);
@@ -221,6 +228,10 @@ export class ActionDispatcher {
 
       case 'ui':
         this.handleUIAction(action.payload.operation, action.payload.params);
+        break;
+
+      case 'telemetry':
+        telemetry.track(action.payload.name, action.payload.payload);
         break;
 
       default: {
@@ -254,6 +265,7 @@ export class ActionDispatcher {
           console.warn('openPopup requires popupId in params');
           return;
         }
+        telemetry.track('open_modal', { popupId });
         const modal = document.getElementById(`modal-${popupId}`);
         if (modal) {
           modal.classList.remove('modal-hidden');
@@ -276,6 +288,7 @@ export class ActionDispatcher {
       }
       case 'goToNextStep': {
         const nextStep = params?.next;
+        telemetry.track('click_cta', { next: nextStep });
         let targetPath = '/';
 
         if (typeof nextStep === 'string') {
