@@ -24,7 +24,10 @@ export interface LanderPlugin {
   registerComponents?: () => Record<string, any>;
 }
 
+import type { TelemetryConfig } from './telemetry';
+
 export interface LanderConfig {
+  telemetry?: TelemetryConfig;
   projectRoot: string;
   engineRoot: string;      // Root of lander-engine package (used for template files)
   jsonConfigsDir?: string; // Default: 'json_configs'
