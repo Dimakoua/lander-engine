@@ -1,3 +1,5 @@
+import type { TelemetryEventType } from './telemetry';
+
 export type ActionType = 
   | 'setState' 
   | 'toggleState' 
@@ -5,7 +7,8 @@ export type ActionType =
   | 'navigation' 
   | 'sequence' 
   | 'conditional' 
-  | 'ui';
+  | 'ui'
+  | 'telemetry';
 
 export interface SetStateAction {
   type: 'setState';
@@ -72,6 +75,14 @@ export interface UIAction {
   };
 }
 
+export interface TelemetryAction {
+  type: 'telemetry';
+  payload: {
+    name: TelemetryEventType;
+    payload?: Record<string, any>;
+  };
+}
+
 export type Action = 
   | SetStateAction 
   | ToggleStateAction 
@@ -79,4 +90,5 @@ export type Action =
   | NavigationAction 
   | SequenceAction 
   | ConditionalAction 
-  | UIAction;
+  | UIAction
+  | TelemetryAction;

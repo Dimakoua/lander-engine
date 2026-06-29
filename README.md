@@ -7,42 +7,6 @@
 
 ---
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Configuration Reference](#configuration-reference)
-  - [flow.json](#flowjson)
-  - [theme.json](#themejson)
-  - [layout.json](#layoutjson)
-  - [state.json](#statejson)
-  - [steps/\*.json](#stepsjson)
-- [Cascading Override System](#cascading-override-system)
-- [Action Dispatcher](#action-dispatcher)
-  - [setState](#setstate)
-  - [toggleState](#togglestate)
-  - [rest](#rest)
-  - [navigation](#navigation)
-  - [sequence](#sequence)
-  - [conditional](#conditional)
-  - [ui](#ui)
-- [Runtime Core API](#runtime-core-api)
-  - [State](#state)
-  - [Dispatcher](#dispatcher)
-  - [Loading State](#loading-state)
-  - [Registry](#registry)
-- [Writing Components](#writing-components)
-- [Custom Actions](#custom-actions)
-- [Plugin API](#plugin-api)
-- [Domain Routing](#domain-routing)
-- [CLI](#cli)
-- [TypeScript Reference](#typescript-reference)
-- [Deployment](#deployment)
-
----
-
 ## Overview
 
 `lander-engine` generates a fully static Astro site from your JSON campaign configurations. Each campaign is a folder of JSON files that describe routing, theme tokens, layout, and the component tree for each step — no template code required.
@@ -57,18 +21,6 @@
 - **Popup/Modal Steps** — first-class support for overlay steps with per-popup styling configuration.
 
 **Built on:** [Astro](https://astro.build) · [Nanostores](https://github.com/nanostores/nanostores) · [Tailwind CSS](https://tailwindcss.com)
-
----
-
-## Installation
-
-```bash
-npm install lander-engine
-```
-
-**Peer dependencies / runtime requirements:**
-- Node.js 20+
-- Astro 4+ (installed as a dependency)
 
 ---
 
@@ -95,6 +47,7 @@ After running `lander dev`, Lander generates a hidden `.lander-engine/` workspac
 
 ---
 
+<<<<<<< HEAD
 ## Project Structure
 
 ```text
@@ -1145,6 +1098,35 @@ dist/index.html                              ← if routing.config.js is present
 .lander-engine/public/_redirects   ← Netlify
 .lander-engine/public/vercel.json  ← Vercel
 ```
+=======
+## Documentation
+
+The documentation has been modularized for easier navigation. Please refer to the specific guides below:
+
+- [Getting Started](docs/getting-started.md)
+  - Installation
+  - Quick Start
+  - Project Structure
+  - CLI
+  - Deployment
+- [Configuration Reference](docs/configuration-reference.md)
+  - flow.json
+  - theme.json
+  - layout.json
+  - steps/*.json
+  - Cascading Override System
+  - Custom Error Pages
+- [State Management](docs/state-management.md)
+  - Runtime Core API
+- [Actions & Dispatcher](docs/actions-and-events.md)
+  - setState, toggleState, rest, navigation, sequence, conditional, ui
+- [Domain Routing & Hosting](docs/routing-and-domains.md)
+- [Telemetry & Analytics](docs/telemetry.md)
+- [Custom Components & Plugins](docs/extending-and-plugins.md)
+  - Writing Components
+  - Custom Actions
+  - Plugin API
+>>>>>>> origin/main
 
 ---
 

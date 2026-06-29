@@ -1,4 +1,5 @@
 import * as nanostores from 'nanostores';
+import { a as TelemetryEventType } from './telemetry-DA2Y4suJ.cjs';
 
 declare const $state: nanostores.MapStore<Record<string, any>>;
 /**
@@ -22,7 +23,7 @@ declare function getState(key: string): any;
  */
 declare function assignVariant(variant: string): void;
 
-type ActionType = 'setState' | 'toggleState' | 'rest' | 'navigation' | 'sequence' | 'conditional' | 'ui';
+type ActionType = 'setState' | 'toggleState' | 'rest' | 'navigation' | 'sequence' | 'conditional' | 'ui' | 'telemetry';
 interface SetStateAction {
     type: 'setState';
     payload: {
@@ -81,7 +82,14 @@ interface UIAction {
         params?: Record<string, any>;
     };
 }
-type Action = SetStateAction | ToggleStateAction | RestAction | NavigationAction | SequenceAction | ConditionalAction | UIAction;
+interface TelemetryAction {
+    type: 'telemetry';
+    payload: {
+        name: TelemetryEventType;
+        payload?: Record<string, any>;
+    };
+}
+type Action = SetStateAction | ToggleStateAction | RestAction | NavigationAction | SequenceAction | ConditionalAction | UIAction | TelemetryAction;
 
 declare class ActionDispatcher {
     /**
@@ -174,4 +182,4 @@ declare function watchLoadingAction(actions: any | undefined, callback: (state: 
  */
 declare function getLoadingActionState(actions?: any, explicitLoadingKeys?: string[]): LoadingActionResult;
 
-export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type ToggleStateAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, assignVariant as g, dispatcher as h, getLoadingActionState as i, getState as j, hydrateState as k, registry as r, setState as s, toggleState as t, watchLoadingAction as w };
+export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type TelemetryAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, type ToggleStateAction as g, assignVariant as h, dispatcher as i, getLoadingActionState as j, getState as k, hydrateState as l, registry as r, setState as s, toggleState as t, watchLoadingAction as w };
