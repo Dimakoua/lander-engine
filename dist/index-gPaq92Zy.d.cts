@@ -1,5 +1,3 @@
-import { T as TelemetryConfig } from './telemetry-DA2Y4suJ.cjs';
-
 /**
  * Recursive partial type (deeply optional) for merge overrides.
  */
@@ -41,9 +39,7 @@ interface SEOConfig {
     canonical?: string;
     noindex?: boolean;
 }
-
 interface LayoutConfig {
-    telemetry?: TelemetryConfig;
     header?: {
         component: string;
         props?: Record<string, any>;

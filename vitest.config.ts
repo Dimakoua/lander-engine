@@ -3,19 +3,8 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    environment: 'jsdom', // Use jsdom for DOM APIs like window
-    environmentMatchGlobs: [
-      ['src/core/**/*.test.ts', 'jsdom'],
-    ],
+    environment: 'jsdom', // Use jsdom for browser APIs like window, document, etc.
     globals: true, // Allow globals like describe, it, expect
-    server: {
-      deps: {
-        inline: [
-          'html-encoding-sniffer',
-          '@exodus/bytes',
-        ],
-      },
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

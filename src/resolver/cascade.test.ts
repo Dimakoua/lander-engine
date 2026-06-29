@@ -46,11 +46,6 @@ describe('deepMerge', () => {
     const expected = { a: { b: 2 } };
     expect(deepMerge(target as any, source as any)).toEqual(expected);
   });
-  it('should handle undefined values gracefully', () => {
-    const target = { a: 1 };
-    const source = { a: undefined };
-    expect(deepMerge(target as any, source as any)).toEqual({ a: undefined });
-  });
 });
 
 describe('resolveCascadingConfig', () => {

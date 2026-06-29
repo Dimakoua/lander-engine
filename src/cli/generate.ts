@@ -10,7 +10,7 @@ export class WorkspaceGenerator {
 
   constructor(config: LanderConfig) {
     this.config = config;
-    this.workspaceDir = path.resolve(config.projectRoot, 'node_modules/.lander-engine');
+    this.workspaceDir = path.resolve(config.projectRoot, '.lander-engine');
   }
 
   /**
@@ -67,21 +67,11 @@ export class WorkspaceGenerator {
    */
   private async copyAssets() {
     const assetsDir = path.resolve(this.config.projectRoot, this.config.assetsDir || 'assets');
-    const targetSrcAssetsDir = path.join(this.workspaceDir, 'src/assets');
-    const targetPublicAssetsDir = path.join(this.workspaceDir, 'public/assets');
-    const targetPublicDir = path.join(this.workspaceDir, 'public');
+    const targetAssetsDir = path.join(this.workspaceDir, 'src/assets');
 
     if (await fs.pathExists(assetsDir)) {
       try {
-        await fs.copy(assetsDir, targetSrcAssetsDir, {
-          overwrite: true,
-          dereference: true,
-        });
-        await fs.copy(assetsDir, targetPublicAssetsDir, {
-          overwrite: true,
-          dereference: true,
-        });
-        await fs.copy(assetsDir, targetPublicDir, {
+        await fs.copy(assetsDir, targetAssetsDir, {
           overwrite: true,
           dereference: true,
         });
@@ -89,10 +79,8 @@ export class WorkspaceGenerator {
         console.error('Failed to copy assets directory:', copyErr);
       }
     } else {
-      // Ensure target directories exist even if the user has no assets
-      await fs.ensureDir(targetSrcAssetsDir);
-      await fs.ensureDir(targetPublicAssetsDir);
-      await fs.ensureDir(targetPublicDir);
+      // Ensure the target directory exists even if the user has no assets
+      await fs.ensureDir(targetAssetsDir);
     }
   }
 

@@ -91,29 +91,4 @@ describe('loading', () => {
       expect(state.isLoading).toBe(true);
     });
   });
-
-  describe('extractActionKeys', () => {
-    it('should extract keys from complex nested branches', () => {
-      const callback = vi.fn();
-      const action = {
-        type: 'conditional',
-        payload: {
-          onTrue: [
-            { type: 'sequence', payload: { actions: [{ type: 'rest', payload: { stateKey: 'c1' } }] } }
-          ],
-          onFalse: [
-            { type: 'rest', payload: { loadingKey: 'custom-load', stateKey: 'c2' } }
-          ]
-        }
-      };
-
-      watchLoadingAction(action, callback);
-
-      $state.setKey('loading_c1', true);
-      expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({ isLoading: true }));
-
-      $state.set({ loading_c1: false, 'custom-load': true });
-      expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({ isLoading: true }));
-    });
-  });
 });

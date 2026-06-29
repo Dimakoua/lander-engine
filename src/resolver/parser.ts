@@ -117,8 +117,9 @@ export class ConfigParser {
    * Loads the base campaign configuration (non-overridden).
    */
   async loadCampaignBase(campaignId: string): Promise<CampaignConfig> {
-    const [flow, theme, layout, seo, state] = await Promise.all([
+    const [flow, abConfig, theme, layout, seo, state] = await Promise.all([
       this.readJson<FlowConfig>(`${campaignId}/flow.json`),
+      this.readJson<any>(`${campaignId}/a_b_config.json`),
       this.readJson<ThemeConfig>(`${campaignId}/theme.json`),
       this.readJson<LayoutConfig>(`${campaignId}/layout.json`),
       this.readJson<SEOConfig>(`${campaignId}/seo.json`),
@@ -126,6 +127,11 @@ export class ConfigParser {
     ]);
 
     if (!flow) throw new Error(`Missing mandatory flow.json for campaign: ${campaignId}`);
+
+    // Merge A/B config into flow if it exists
+    if (abConfig && abConfig.variants) {
+      flow.variants = abConfig.variants;
+    }
     if (!flow.initialStep) throw new Error(`flow.json must have an 'initialStep' for campaign: ${campaignId}`);
     
     if (!theme) throw new Error(`Missing mandatory theme.json for campaign: ${campaignId}`);
@@ -168,13 +174,23 @@ export class ConfigParser {
    */
   async loadOverrides(campaignId: string, subPath: string): Promise<Partial<CampaignConfig>> {
     const relPath = `${campaignId}/${subPath}`;
-    const [flow, theme, layout, seo, state] = await Promise.all([
+    const [flow, abConfig, theme, layout, seo, state] = await Promise.all([
       this.readJson<Partial<FlowConfig>>(`${relPath}/flow.json`),
+      this.readJson<any>(`${relPath}/a_b_config.json`),
       this.readJson<Partial<ThemeConfig>>(`${relPath}/theme.json`),
       this.readJson<Partial<LayoutConfig>>(`${relPath}/layout.json`),
       this.readJson<Partial<SEOConfig>>(`${relPath}/seo.json`),
       this.readJson<Record<string, any>>(`${relPath}/state.json`),
     ]);
+
+    // Merge A/B config into flow if it exists
+    if (abConfig && abConfig.variants) {
+      if (!flow) {
+         // Should not happen theoretically since flow is always merged, but ts needs it
+      } else {
+         flow.variants = abConfig.variants;
+      }
+    }
 
     const stepFiles = await glob(`${relPath}/steps/*.json`, { cwd: this.baseDir });
     const steps: Record<string, Partial<StepConfig>> = {};
