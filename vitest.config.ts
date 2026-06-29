@@ -3,7 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    environment: 'node', // Default to node environment
+    environment: 'jsdom', // Use jsdom for DOM APIs like window
     environmentMatchGlobs: [
       ['src/core/**/*.test.ts', 'jsdom'],
     ],
