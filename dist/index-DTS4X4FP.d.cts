@@ -182,8 +182,4 @@ declare function watchLoadingAction(actions: any | undefined, callback: (state: 
  */
 declare function getLoadingActionState(actions?: any, explicitLoadingKeys?: string[]): LoadingActionResult;
 
-<<<<<<<< HEAD:dist/index-Ym6D7V1W.d.ts
-export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type ToggleStateAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, assignVariant as g, dispatcher as h, getLoadingActionState as i, getState as j, hydrateState as k, registry as r, setState as s, toggleState as t, watchLoadingAction as w };
-========
-export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type TelemetryAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, type ToggleStateAction as g, dispatcher as h, getLoadingActionState as i, getState as j, hydrateState as k, registry as r, setState as s, toggleState as t, watchLoadingAction as w };
->>>>>>>> main:dist/index-BVno9mvk.d.cts
+export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type TelemetryAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, type ToggleStateAction as g, assignVariant as h, dispatcher as i, getLoadingActionState as j, getState as k, hydrateState as l, registry as r, setState as s, toggleState as t, watchLoadingAction as w };

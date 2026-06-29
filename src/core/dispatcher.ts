@@ -2,11 +2,8 @@ import { Action } from '@/types/actions';
 import { setState, toggleState, $state } from './state';
 import { registry } from './registry';
 import { getRestLoadingKey } from './loading';
-<<<<<<< HEAD
 import { selectVariant, VariantAllocationConfig } from './experiment';
-=======
 import { telemetry } from './telemetry';
->>>>>>> main
 
 export class ActionDispatcher {
   /**
