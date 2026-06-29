@@ -1,0 +1,58 @@
+---
+import Registry from '../Registry.astro';
+import config from '../lander-config.json';
+
+const errorPages = config.errorPages || {};
+const custom404 = errorPages['404'];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>404 - Page Not Found</title>
+    <style>
+      .lander-error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-family: system-ui, -apple-system, sans-serif;
+        text-align: center;
+        padding: 2rem;
+      }
+      .lander-error-title {
+        font-size: 4rem;
+        margin: 0;
+        color: #333;
+      }
+      .lander-error-message {
+        font-size: 1.5rem;
+        color: #666;
+      }
+      .lander-error-back {
+        margin-top: 2rem;
+        padding: 0.5rem 1rem;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    {custom404 ? (
+      <Registry component={custom404.component} props={custom404.props} />
+    ) : (
+      <div class="lander-error-container">
+        <h1 class="lander-error-title">404</h1>
+        <p class="lander-error-message">Page Not Found</p>
+        <a href="/" class="lander-error-back">Go back home</a>
+      </div>
+    )}
+    <script>
+      import '../registry-manifest';
+    </script>
+  </body>
+</html>

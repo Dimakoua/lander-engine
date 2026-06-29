@@ -17,6 +17,7 @@
   - [flow.json](#flowjson)
   - [theme.json](#themejson)
   - [layout.json](#layoutjson)
+  - [state.json](#statejson)
   - [steps/\*.json](#stepsjson)
 - [Cascading Override System](#cascading-override-system)
 - [Action Dispatcher](#action-dispatcher)
@@ -296,6 +297,77 @@ Binds components to the header and footer slots and injects third-party scripts.
 
 ---
 
+### `state.json`
+
+An optional configuration file at the root of a campaign directory (or override folders) defining initial global state key/value pairs and build-time configuration variables.
+
+```json
+{
+  "userSegment": "guest",
+  "isPromoActive": true,
+  "discountCode": "WELCOME2026",
+  "cartCount": 0,
+  "brandName": "Acme Corp",
+  "supportEmail": "support@acme.com"
+}
+```
+
+#### 1. Build-Time Variable Interpolation
+
+Values defined in `state.json` can be referenced in other JSON configuration files (`flow.json`, `theme.json`, `layout.json`, `seo.json`, and `steps/*.json`) using double handlebars syntax (`{{ key }}` or `{{ nested.key }}`).
+
+During configuration resolution (`ConfigParser`), matching variable placeholders are automatically replaced with their corresponding values from `state.json`.
+
+**Usage Examples:**
+
+* **String Interpolation**: Embedded within string values across configurations.
+  ```json
+  // steps/main.json
+  {
+    "seo": {
+      "title": "Welcome to {{ brandName }}",
+      "description": "Contact us at {{ supportEmail }}"
+    }
+  }
+  ```
+
+* **Exact Value / Type Preservation**: If an entire string field matches `{{ key }}`, the exact data type (e.g. `boolean`, `number`, `object`, `array`) from `state.json` is preserved.
+  ```json
+  // steps/main.json
+  {
+    "sections": [
+      {
+        "component": "PromoBanner",
+        "renderIf": "{{ isPromoActive }}",
+        "props": {
+          "code": "{{ discountCode }}"
+        }
+      }
+    ]
+  }
+  ```
+
+* **Nested Path Lookup**: Dot notation can be used to traverse nested objects in `state.json`.
+  ```json
+  // state.json: { "company": { "details": { "name": "Acme" } } }
+  "title": "Welcome to {{ company.details.name }}"
+  ```
+
+---
+
+#### 2. Runtime State & Reactivity
+
+1. **Campaign-Level Base State**: Defined in `campaign_id/state.json` and loaded during campaign initialization (`ConfigParser.loadCampaignBase`).
+2. **Cascading Overrides**: Can be overridden per device (e.g. `mobile/state.json`) or variant (e.g. `variant_b/state.json`). Overrides are deep-merged using priority order (`Base < Device < Variant < Variant+Device`).
+3. **Initial State Composition**: On page load, campaign-level state is combined with step-level state (`step.state` in `steps/*.json`) and automatic runtime environment properties:
+   - `isMobile`: `boolean` indicating if mobile route is active
+   - `variant`: active A/B variant ID (or `null`)
+   - `campaignId`: ID of the current campaign
+   - `stepId`: ID of the current step
+4. **Runtime Persistence & Reactivity**: Hydrated into the global Nanostores `$state` and persisted in `sessionStorage` under `lander-engine-state`. Read via `getState` and mutated via actions (`setState`, `toggleState`, `rest`).
+
+---
+
 ### `steps/*.json`
 
 Each file in `steps/` defines one page/step in your campaign. The filename (without `.json`) is the step ID.
@@ -552,6 +624,62 @@ State is backed by a [Nanostores](https://github.com/nanostores/nanostores) `map
 | `toggleState` | `(key: string) => void` | Flip a boolean key and persist. |
 | `getState` | `(key: string) => any` | Read a key from memory, falling back to `sessionStorage`. |
 
+#### Example: Using State in Components
+
+**1. React Component (Reactive State Subscription)**
+
+```tsx
+// components/PromoBanner.tsx
+import { useState, useEffect } from 'react';
+import { $state, setState, toggleState } from 'lander-engine/core';
+
+export default function PromoBanner({ promoKey = 'isPromoActive' }) {
+  // Read initial state and subscribe to reactive updates
+  const [store, setStore] = useState(() => $state.get());
+
+  useEffect(() => {
+    // Subscribe to Nanostores updates
+    const unsubscribe = $state.listen((updatedState) => {
+      setStore(updatedState);
+    });
+    return unsubscribe;
+  }, []);
+
+  const isPromoActive = store[promoKey];
+
+  if (!isPromoActive) return null;
+
+  return (
+    <div className="bg-amber-100 p-4 flex justify-between items-center">
+      <span>🎉 Special Offer: Use code <strong>{store.discountCode || 'SAVE10'}</strong>!</span>
+      <button
+        onClick={() => toggleState(promoKey)}
+        className="text-sm text-gray-600 underline"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+```
+
+**2. Vanilla JS / Astro Script (Imperative Read & Mutate)**
+
+```html
+<script>
+  import { getState, setState } from 'lander-engine/core';
+
+  // Read state value
+  const segment = getState('userSegment');
+  console.log('Current segment:', segment);
+
+  // Mutate state value on interaction
+  document.getElementById('opt-in-btn')?.addEventListener('click', () => {
+    setState('hasOptedIn', true);
+  });
+</script>
+```
+
 ### Dispatcher
 
 ```ts
@@ -805,6 +933,31 @@ export default {
 | `onAfterBuild` | `async (config) => void` | Called after `astro build` only (not `dev`) |
 | `registerComponents` | `() => ComponentMap` | Additional components to register |
 | `registerActions` | `() => ActionMap` | Additional action handlers to register |
+
+---
+
+## Custom Error Pages
+
+Lander Engine allows you to define custom fallback error components for standard HTTP errors, such as `404` and `500`.
+
+To configure custom error pages globally, add the `errorPages` object to your `lander.config.js` or define it inside a campaign's `layout.json`. Each key is a string representing the HTTP error code, mapping to a registered component:
+
+```js
+// lander.config.js
+export default {
+  errorPages: {
+    '404': {
+      component: 'Custom404',
+      props: { message: "Oops, we couldn't find that page!" }
+    },
+    '500': {
+      component: 'Custom500'
+    }
+  }
+};
+```
+
+If you leave this out, a simple built-in unbranded HTML fallback will be displayed for `404` and `500` routes.
 
 ---
 

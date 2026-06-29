@@ -57,6 +57,9 @@ export class WorkspaceGenerator {
 
     // 4. Generate domain routing entry point (if routing.config.js is present)
     await this.generateDomainRouting();
+
+    // 4. Generate lander config json for global error pages
+    await this.generateConfigJson();
   }
 
   /**
@@ -245,5 +248,15 @@ const { component, props } = Astro.props;
     await fs.writeFile(path.join(this.workspaceDir, 'public/vercel.json'), vercelJson);
 
     console.log(`Domain routing configured for ${Object.keys(domainPaths).length} domain(s).`);
+  }
+
+  /**
+   * Generates a config.json inside the workspace for templates to read global config.
+   */
+  private async generateConfigJson() {
+    const configPath = path.join(this.workspaceDir, 'src/lander-config.json');
+    const { errorPages } = this.config;
+    await fs.ensureDir(path.dirname(configPath));
+    await fs.writeJson(configPath, { errorPages: errorPages || {} }, { spaces: 2 });
   }
 }

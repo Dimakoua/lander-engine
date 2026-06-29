@@ -48,6 +48,10 @@ interface LayoutConfig {
         component: string;
         props?: Record<string, any>;
     };
+    errorPages?: Record<string, {
+        component: string;
+        props?: Record<string, any>;
+    }>;
     scripts?: Array<{
         src: string;
         async?: boolean;
@@ -98,6 +102,7 @@ interface CampaignConfig {
     state: Record<string, any>;
     steps: Record<string, StepConfig>;
 }
+declare function interpolateVariables(target: any, state: Record<string, any>): any;
 declare class ConfigParser {
     private baseDir;
     constructor(baseDir: string);
@@ -124,4 +129,4 @@ declare class ConfigParser {
     loadOverrides(campaignId: string, subPath: string): Promise<Partial<CampaignConfig>>;
 }
 
-export { type CampaignConfig as C, type DeepPartial as D, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, resolveCascadingConfig as r };
+export { type CampaignConfig as C, type DeepPartial as D, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, interpolateVariables as i, resolveCascadingConfig as r };

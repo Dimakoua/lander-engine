@@ -1,5 +1,5 @@
 export { $ as $state, A as Action, a as ActionDispatcher, b as ActionHandler, c as ActionMap, d as ActionType, C as ComponentMap, e as ConditionalAction, N as NavigationAction, R as RestAction, S as SequenceAction, f as SetStateAction, T as ToggleStateAction, U as UIAction, g as dispatcher, h as getLoadingActionState, i as getState, j as hydrateState, r as registry, s as setState, t as toggleState, w as watchLoadingAction } from './index-kQ4DJH5D.cjs';
-export { C as CampaignConfig, a as ConfigParser, D as DeepPartial, F as FlowConfig, L as LayoutConfig, M as ModalConfig, S as SEOConfig, b as StepConfig, c as StepSection, T as ThemeConfig, d as deepMerge, r as resolveCascadingConfig } from './index-ha-mtlj-.cjs';
+export { C as CampaignConfig, a as ConfigParser, D as DeepPartial, F as FlowConfig, L as LayoutConfig, M as ModalConfig, S as SEOConfig, b as StepConfig, c as StepSection, T as ThemeConfig, d as deepMerge, i as interpolateVariables, r as resolveCascadingConfig } from './index-ChZ3Vr3O.cjs';
 import 'nanostores';
 
 /**
@@ -28,6 +28,10 @@ interface LanderConfig {
     plugins?: LanderPlugin[];
     adapter?: any;
     routingConfig?: RoutingConfig;
+    errorPages?: Record<string, {
+        component: string;
+        props?: Record<string, any>;
+    }>;
 }
 type UserLanderConfig = Partial<LanderConfig>;
 

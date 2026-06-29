@@ -26,6 +26,10 @@ export interface LanderConfig {
   plugins?: LanderPlugin[];
   adapter?: any;           // Future: SSG/SSR adapter config
   routingConfig?: RoutingConfig; // Domain → campaign mapping from routing.config.js
+  errorPages?: Record<string, {
+    component: string;
+    props?: Record<string, any>;
+  }>;
 }
 
 export type UserLanderConfig = Partial<LanderConfig>;
