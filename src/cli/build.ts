@@ -157,7 +157,6 @@ export class Builder {
       throw new Error(`Build directory not found at ${distDir}. Run 'lander build' first.`);
     }
 
-    // Dynamic import to avoid CJS/ESM issues with sirv if necessary, but sirv is standard
     const sirv = (await import('sirv')).default;
     const http = await import('http');
 
@@ -169,11 +168,23 @@ export class Builder {
       dotfiles: true,
     });
 
-    http.createServer(server).listen(port, (err?: any) => {
-      if (err) throw err;
-      console.log(`\n🚀 Preview server running at http://localhost:${port}`);
-      console.log(`Serving with Gzip and Brotli support from: ${distDir}\n`);
-    });
+    const createAndListen = (currentPort: number) => {
+      const httpServer = http.createServer(server);
+      httpServer.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.warn(`Port ${currentPort} is in use, trying ${currentPort + 1}...`);
+          createAndListen(currentPort + 1);
+        } else {
+          throw err;
+        }
+      });
+      httpServer.listen(currentPort, () => {
+        console.log(`\n🚀 Preview server running at http://localhost:${currentPort}`);
+        console.log(`Serving with Gzip and Brotli support from: ${distDir}\n`);
+      });
+    };
+
+    createAndListen(port);
   }
 }
 
