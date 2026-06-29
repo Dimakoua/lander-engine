@@ -788,6 +788,31 @@ export default {
 
 ---
 
+## Custom Error Pages
+
+Lander Engine allows you to define custom fallback error components for standard HTTP errors, such as `404` and `500`.
+
+To configure custom error pages globally, add the `errorPages` object to your `lander.config.js` or define it inside a campaign's `layout.json`. Each key is a string representing the HTTP error code, mapping to a registered component:
+
+```js
+// lander.config.js
+export default {
+  errorPages: {
+    '404': {
+      component: 'Custom404',
+      props: { message: "Oops, we couldn't find that page!" }
+    },
+    '500': {
+      component: 'Custom500'
+    }
+  }
+};
+```
+
+If you leave this out, a simple built-in unbranded HTML fallback will be displayed for `404` and `500` routes.
+
+---
+
 ## Domain Routing
 
 Map custom domains to specific campaigns by creating a `routing.config.js` in your project root. At build time, Lander reads each campaign's `flow.json` to resolve the `initialStep`, then generates three routing artifacts targeting different static hosts.
