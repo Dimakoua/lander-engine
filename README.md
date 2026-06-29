@@ -17,6 +17,7 @@
   - [flow.json](#flowjson)
   - [theme.json](#themejson)
   - [layout.json](#layoutjson)
+  - [state.json](#statejson)
   - [steps/\*.json](#stepsjson)
 - [Cascading Override System](#cascading-override-system)
 - [Action Dispatcher](#action-dispatcher)
@@ -276,6 +277,32 @@ Binds components to the header and footer slots and injects third-party scripts.
 
 ---
 
+### `state.json`
+
+An optional configuration file at the root of a campaign directory (or override folders) defining initial global state key/value pairs.
+
+```json
+{
+  "userSegment": "guest",
+  "isPromoActive": true,
+  "discountCode": "WELCOME2026",
+  "cartCount": 0
+}
+```
+
+**How initial state works:**
+
+1. **Campaign-Level Base State**: Defined in `campaign_id/state.json` and loaded during campaign initialization (`ConfigParser.loadCampaignBase`).
+2. **Cascading Overrides**: Can be overridden per device (e.g. `mobile/state.json`) or variant (e.g. `variant_b/state.json`). Overrides are deep-merged using priority order (`Base < Device < Variant < Variant+Device`).
+3. **Initial State Composition**: On page load, campaign-level state is combined with step-level state (`step.state` in `steps/*.json`) and automatic runtime environment properties:
+   - `isMobile`: `boolean` indicating if mobile route is active
+   - `variant`: active A/B variant ID (or `null`)
+   - `campaignId`: ID of the current campaign
+   - `stepId`: ID of the current step
+4. **Runtime Persistence & Reactivity**: Hydrated into the global Nanostores `$state` and persisted in `sessionStorage` under `lander-engine-state`. Read via `getState` and mutated via actions (`setState`, `toggleState`, `rest`).
+
+---
+
 ### `steps/*.json`
 
 Each file in `steps/` defines one page/step in your campaign. The filename (without `.json`) is the step ID.
@@ -531,6 +558,62 @@ State is backed by a [Nanostores](https://github.com/nanostores/nanostores) `map
 | `setState` | `(key: string, value: any) => void` | Set a single key and persist. |
 | `toggleState` | `(key: string) => void` | Flip a boolean key and persist. |
 | `getState` | `(key: string) => any` | Read a key from memory, falling back to `sessionStorage`. |
+
+#### Example: Using State in Components
+
+**1. React Component (Reactive State Subscription)**
+
+```tsx
+// components/PromoBanner.tsx
+import { useState, useEffect } from 'react';
+import { $state, setState, toggleState } from 'lander-engine/core';
+
+export default function PromoBanner({ promoKey = 'isPromoActive' }) {
+  // Read initial state and subscribe to reactive updates
+  const [store, setStore] = useState(() => $state.get());
+
+  useEffect(() => {
+    // Subscribe to Nanostores updates
+    const unsubscribe = $state.listen((updatedState) => {
+      setStore(updatedState);
+    });
+    return unsubscribe;
+  }, []);
+
+  const isPromoActive = store[promoKey];
+
+  if (!isPromoActive) return null;
+
+  return (
+    <div className="bg-amber-100 p-4 flex justify-between items-center">
+      <span>🎉 Special Offer: Use code <strong>{store.discountCode || 'SAVE10'}</strong>!</span>
+      <button 
+        onClick={() => toggleState(promoKey)}
+        className="text-sm text-gray-600 underline"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+```
+
+**2. Vanilla JS / Astro Script (Imperative Read & Mutate)**
+
+```html
+<script>
+  import { getState, setState } from 'lander-engine/core';
+
+  // Read state value
+  const segment = getState('userSegment');
+  console.log('Current segment:', segment);
+
+  // Mutate state value on interaction
+  document.getElementById('opt-in-btn')?.addEventListener('click', () => {
+    setState('hasOptedIn', true);
+  });
+</script>
+```
 
 ### Dispatcher
 
