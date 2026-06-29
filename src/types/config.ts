@@ -21,6 +21,7 @@ export interface LanderConfig {
   jsonConfigsDir?: string; // Default: 'json_configs'
   componentsDir?: string;  // Default: 'components'
   actionsDir?: string;     // Default: 'actions'
+  assetsDir?: string;      // Default: 'assets'
   outputDir?: string;      // Default: 'dist'
   plugins?: LanderPlugin[];
   adapter?: any;           // Future: SSG/SSR adapter config

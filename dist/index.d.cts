@@ -23,6 +23,7 @@ interface LanderConfig {
     jsonConfigsDir?: string;
     componentsDir?: string;
     actionsDir?: string;
+    assetsDir?: string;
     outputDir?: string;
     plugins?: LanderPlugin[];
     adapter?: any;

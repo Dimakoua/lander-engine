@@ -1,9 +1,10 @@
 ---
 import { ConfigParser, resolveCascadingConfig } from 'lander-engine/resolver';
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 import '../registry-manifest'; 
 import Registry from '../Registry.astro';
 import ModalsContainer from '../ModalsContainer.astro';
+import logo from '@assets/logo.svg';
 
 export async function getStaticPaths() {
   const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
@@ -210,9 +211,10 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
     <style>body { visibility: hidden; }</style>
-    <ViewTransitions />
+    <ClientRouter />
   </head>
   <body style={themeVars}>
+    <img src={logo.src} alt="Logo" class="hidden lander-engine-logo" />
     {layout?.header && (
       <header id="lander-header">
         <Registry component={layout.header.component} props={layout.header.props} />

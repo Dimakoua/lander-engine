@@ -104,6 +104,8 @@ my-project/
 │   └── Footer.astro
 ├── actions/                     # Custom action handlers
 │   └── myActions.ts
+├── assets/                      # Static assets like images, SVGs, fonts, etc.
+│   └── logo.svg
 ├── json_configs/                # Campaign configurations
 │   └── campaign_alpha/
 │       ├── flow.json            # Step routing and modal definitions
@@ -130,6 +132,24 @@ my-project/
 .lander-engine/                  # Managed Astro workspace — auto-generated
 dist/                            # Final static HTML output after `lander build`
 ```
+
+### Using Static Assets
+
+The `assets` directory is natively supported. Any files placed inside the root `assets/` folder (or your custom `assetsDir` path defined in `lander.config.js`) will be automatically copied into the final build environment.
+
+You can securely reference these static assets in your UI components via the globally available `@assets/` path alias.
+
+**Example usage in a React or Astro component:**
+
+```jsx
+import logo from '@assets/logo.svg';
+
+function MyHeader() {
+  return <img src={logo.src || logo} alt="Brand Logo" />;
+}
+```
+
+The bundler will ensure these assets are hashed, compressed, and served efficiently in the `dist` directory on build.
 
 ---
 
@@ -279,7 +299,23 @@ Binds components to the header and footer slots and injects third-party scripts.
 
 ### `state.json`
 
-An optional configuration file at the root of a campaign directory (or override folders) defining initial global state key/value pairs and build-time configuration variables.
+`state.json` defines the initial global state for a campaign, serving as the single source of truth for both build‑time variable interpolation and runtime state reactivity.
+
+#### Build‑Time Variable Interpolation
+
+Values defined in `state.json` (and overridden by device or variant state files) can be referenced across all other campaign configurations (`flow.json`, `theme.json`, `layout.json`, `seo.json`, and `steps/*.json`) using the `{{ key }}` syntax.
+
+- **Simple & Nested Keys**: Reference top-level properties like `{{ brandName }}` or deeply nested object structures like `{{ company.details.name }}`.
+- **Type Preservation**: When an entire JSON field string matches a placeholder (e.g., `"renderIf": "{{ isPromoActive }}"`), the resolved value retains its original data type (boolean, number, object, array) rather than being converted into a string.
+
+#### Runtime State & Reactivity
+
+At runtime, the configuration state is loaded on page load and merged with device overrides (`mobile/state.json`), variant overrides (`variant_b/state.json`), and step-level state (`state` property in `steps/*.json`).
+
+- **Nanostores & Persistence**: The resolved state is hydrated into a global Nanostores `$state` store and automatically persisted to `sessionStorage` under `lander-engine-state`.
+- **Injected Context**: Lander automatically injects runtime context properties into state: `isMobile` (boolean), `variant` (string), `campaignId` (string), and `stepId` (string).
+
+#### Example `state.json`
 
 ```json
 {
@@ -292,59 +328,113 @@ An optional configuration file at the root of a campaign directory (or override 
 }
 ```
 
-#### 1. Build-Time Variable Interpolation
+#### Configuration Usage Examples
 
-Values defined in `state.json` can be referenced in other JSON configuration files (`flow.json`, `theme.json`, `layout.json`, `seo.json`, and `steps/*.json`) using double handlebars syntax (`{{ key }}` or `{{ nested.key }}`).
+*String interpolation in a step*
 
-During configuration resolution (`ConfigParser`), matching variable placeholders are automatically replaced with their corresponding values from `state.json`.
+```json
+{
+  "seo": {
+    "title": "Welcome to {{ brandName }}",
+    "description": "Contact us at {{ supportEmail }}"
+  }
+}
+```
 
-**Usage Examples:**
+*Conditional section rendering with type preservation*
 
-* **String Interpolation**: Embedded within string values across configurations.
-  ```json
-  // steps/main.json
-  {
-    "seo": {
-      "title": "Welcome to {{ brandName }}",
-      "description": "Contact us at {{ supportEmail }}"
+```json
+{
+  "sections": [
+    {
+      "component": "PromoBanner",
+      "renderIf": "{{ isPromoActive }}",
+      "props": { "code": "{{ discountCode }}" }
     }
-  }
-  ```
+  ]
+}
+```
 
-* **Exact Value / Type Preservation**: If an entire string field matches `{{ key }}`, the exact data type (e.g. `boolean`, `number`, `object`, `array`) from `state.json` is preserved.
-  ```json
-  // steps/main.json
-  {
-    "sections": [
-      {
-        "component": "PromoBanner",
-        "renderIf": "{{ isPromoActive }}",
-        "props": {
-          "code": "{{ discountCode }}"
-        }
-      }
-    ]
-  }
-  ```
+*Nested path lookup*
 
-* **Nested Path Lookup**: Dot notation can be used to traverse nested objects in `state.json`.
-  ```json
+```json
+{
   // state.json: { "company": { "details": { "name": "Acme" } } }
   "title": "Welcome to {{ company.details.name }}"
-  ```
+}
+```
 
----
+#### Core State API Reference
 
-#### 2. Runtime State & Reactivity
+Import runtime state functions from `lander-engine/core`:
 
-1. **Campaign-Level Base State**: Defined in `campaign_id/state.json` and loaded during campaign initialization (`ConfigParser.loadCampaignBase`).
-2. **Cascading Overrides**: Can be overridden per device (e.g. `mobile/state.json`) or variant (e.g. `variant_b/state.json`). Overrides are deep-merged using priority order (`Base < Device < Variant < Variant+Device`).
-3. **Initial State Composition**: On page load, campaign-level state is combined with step-level state (`step.state` in `steps/*.json`) and automatic runtime environment properties:
-   - `isMobile`: `boolean` indicating if mobile route is active
-   - `variant`: active A/B variant ID (or `null`)
-   - `campaignId`: ID of the current campaign
-   - `stepId`: ID of the current step
-4. **Runtime Persistence & Reactivity**: Hydrated into the global Nanostores `$state` and persisted in `sessionStorage` under `lander-engine-state`. Read via `getState` and mutated via actions (`setState`, `toggleState`, `rest`).
+```ts
+import { $state, hydrateState, setState, toggleState, getState } from 'lander-engine/core';
+```
+
+| Function / Export | Signature | Description |
+|---|---|---|
+| `$state` | `MapStore<Record<string, any>>` | The raw Nanostores store. Subscribe with `$state.listen(cb)`. |
+| `getState` | `(key: string) => any` | Read a key from memory, falling back to `sessionStorage`. |
+| `setState` | `(key: string, value: any) => void` | Set a single key in state and persist to `sessionStorage`. |
+| `toggleState` | `(key: string) => void` | Flip a boolean key in state and persist. |
+| `hydrateState` | `(data: Record<string, any>) => void` | Replace the entire state store and persist. |
+
+#### Component Usage Examples
+
+**1. React Component (Reactive State Subscription)**
+
+```tsx
+// components/PromoBanner.tsx
+import { useState, useEffect } from 'react';
+import { $state, setState, toggleState } from 'lander-engine/core';
+
+export default function PromoBanner({ promoKey = 'isPromoActive' }) {
+  // Read initial state and subscribe to reactive updates
+  const [store, setStore] = useState(() => $state.get());
+
+  useEffect(() => {
+    // Subscribe to Nanostores updates
+    const unsubscribe = $state.listen((updatedState) => {
+      setStore(updatedState);
+    });
+    return unsubscribe;
+  }, []);
+
+  const isPromoActive = store[promoKey];
+
+  if (!isPromoActive) return null;
+
+  return (
+    <div className="bg-amber-100 p-4 flex justify-between items-center">
+      <span>🎉 Special Offer: Use code <strong>{store.discountCode || 'SAVE10'}</strong>!</span>
+      <button
+        onClick={() => toggleState(promoKey)}
+        className="text-sm text-gray-600 underline"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+```
+
+**2. Vanilla JS / Astro Script (Imperative Read & Mutate)**
+
+```html
+<script>
+  import { getState, setState } from 'lander-engine/core';
+
+  // Read state value
+  const segment = getState('userSegment');
+  console.log('Current segment:', segment);
+
+  // Mutate state value on interaction
+  document.getElementById('opt-in-btn')?.addEventListener('click', () => {
+    setState('hasOptedIn', true);
+  });
+</script>
+```
 
 ---
 
@@ -590,75 +680,9 @@ Import from `lander-engine/core` in your components.
 
 ### State
 
-```ts
-import { $state, hydrateState, setState, toggleState, getState } from 'lander-engine/core';
-```
+State in Lander Engine bridges build-time configuration with client-side Nanostores reactivity and `sessionStorage` persistence.
 
-State is backed by a [Nanostores](https://github.com/nanostores/nanostores) `map` store and automatically persisted to `sessionStorage` under the key `lander-engine-state`, rehydrated on page load.
-
-| Function | Signature | Description |
-|---|---|---|
-| `$state` | `MapStore<Record<string, any>>` | The raw Nanostores store. Subscribe with `$state.listen(cb)`. |
-| `hydrateState` | `(data: Record<string, any>) => void` | Replace the entire state and persist it. |
-| `setState` | `(key: string, value: any) => void` | Set a single key and persist. |
-| `toggleState` | `(key: string) => void` | Flip a boolean key and persist. |
-| `getState` | `(key: string) => any` | Read a key from memory, falling back to `sessionStorage`. |
-
-#### Example: Using State in Components
-
-**1. React Component (Reactive State Subscription)**
-
-```tsx
-// components/PromoBanner.tsx
-import { useState, useEffect } from 'react';
-import { $state, setState, toggleState } from 'lander-engine/core';
-
-export default function PromoBanner({ promoKey = 'isPromoActive' }) {
-  // Read initial state and subscribe to reactive updates
-  const [store, setStore] = useState(() => $state.get());
-
-  useEffect(() => {
-    // Subscribe to Nanostores updates
-    const unsubscribe = $state.listen((updatedState) => {
-      setStore(updatedState);
-    });
-    return unsubscribe;
-  }, []);
-
-  const isPromoActive = store[promoKey];
-
-  if (!isPromoActive) return null;
-
-  return (
-    <div className="bg-amber-100 p-4 flex justify-between items-center">
-      <span>🎉 Special Offer: Use code <strong>{store.discountCode || 'SAVE10'}</strong>!</span>
-      <button
-        onClick={() => toggleState(promoKey)}
-        className="text-sm text-gray-600 underline"
-      >
-        Dismiss
-      </button>
-    </div>
-  );
-}
-```
-
-**2. Vanilla JS / Astro Script (Imperative Read & Mutate)**
-
-```html
-<script>
-  import { getState, setState } from 'lander-engine/core';
-
-  // Read state value
-  const segment = getState('userSegment');
-  console.log('Current segment:', segment);
-
-  // Mutate state value on interaction
-  document.getElementById('opt-in-btn')?.addEventListener('click', () => {
-    setState('hasOptedIn', true);
-  });
-</script>
-```
+For complete documentation on build-time interpolation, runtime state reactivity, API function references, and React / Vanilla JS component usage examples, see the unified [`state.json` & State Management](#statejson) section.
 
 ### Dispatcher
 
