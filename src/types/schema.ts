@@ -24,7 +24,10 @@ export interface SEOConfig {
   noindex?: boolean;
 }
 
+import type { TelemetryConfig } from './telemetry';
+
 export interface LayoutConfig {
+  telemetry?: TelemetryConfig;
   header?: {
     component: string;
     props?: Record<string, any>;
