@@ -49,11 +49,39 @@ export class WorkspaceGenerator {
       throw new Error(`Lander Engine template not found at ${templateDir}. This usually means the lander-engine package installation is incomplete or corrupted.`);
     }
 
-    // 2. Generate Registry Manifest
+    // 2. Copy User Assets Directory
+    await this.copyAssets();
+
+    // 3. Generate Registry Manifest
     await this.generateRegistryManifest();
 
-    // 3. Generate domain routing entry point (if routing.config.js is present)
+    // 4. Generate domain routing entry point (if routing.config.js is present)
     await this.generateDomainRouting();
+
+    // 4. Generate lander config json for global error pages
+    await this.generateConfigJson();
+  }
+
+  /**
+   * Copies the user's configured assets directory to the workspace.
+   */
+  private async copyAssets() {
+    const assetsDir = path.resolve(this.config.projectRoot, this.config.assetsDir || 'assets');
+    const targetAssetsDir = path.join(this.workspaceDir, 'src/assets');
+
+    if (await fs.pathExists(assetsDir)) {
+      try {
+        await fs.copy(assetsDir, targetAssetsDir, {
+          overwrite: true,
+          dereference: true,
+        });
+      } catch (copyErr) {
+        console.error('Failed to copy assets directory:', copyErr);
+      }
+    } else {
+      // Ensure the target directory exists even if the user has no assets
+      await fs.ensureDir(targetAssetsDir);
+    }
   }
 
   /**
@@ -266,5 +294,15 @@ const { component, props } = Astro.props;
     await fs.writeFile(path.join(this.workspaceDir, 'public/vercel.json'), vercelJson);
 
     console.log(`Domain routing configured for ${Object.keys(domainPaths).length} domain(s).`);
+  }
+
+  /**
+   * Generates a config.json inside the workspace for templates to read global config.
+   */
+  private async generateConfigJson() {
+    const configPath = path.join(this.workspaceDir, 'src/lander-config.json');
+    const { errorPages } = this.config;
+    await fs.ensureDir(path.dirname(configPath));
+    await fs.writeJson(configPath, { errorPages: errorPages || {} }, { spaces: 2 });
   }
 }
