@@ -454,7 +454,7 @@ Each file in `steps/` defines one page/step in your campaign. The filename (with
         "onCtaClick": [
           {
             "type": "navigation",
-            "payload": { "to": "checkout", "type": "step" }
+            "payload": { "to": "checkout", "operation": "step" }
           }
         ]
       }
@@ -571,7 +571,7 @@ Make an HTTP request. Sets a loading flag automatically during the request.
     "stateKey":   "leadResponse",
     "loadingKey": "isSubmitting",
     "onSuccess": [
-      { "type": "navigation", "payload": { "to": "thanks", "type": "step" } }
+      { "type": "navigation", "payload": { "to": "thanks", "operation": "step" } }
     ],
     "onError": [
       { "type": "setState", "payload": { "key": "submitError", "value": true } }
@@ -598,16 +598,17 @@ Make an HTTP request. Sets a loading flag automatically during the request.
 Navigate to another step or an external URL.
 
 ```json
-{ "type": "navigation", "payload": { "to": "checkout", "type": "step" } }
+{ "type": "navigation", "payload": { "to": "checkout", "operation": "step" } }
 
-{ "type": "navigation", "payload": { "to": "https://example.com", "type": "external", "replace": true } }
+{ "type": "navigation", "payload": { "to": "https://example.com", "operation": "external", "replace": true } }
 ```
 
-| Field | Type | Description |
-|---|---|---|
-| `to` | `string` | Step ID (for `type: "step"`) or full URL (for `type: "external"`) |
-| `type` | `"step"` \| `"external"` | Navigation mode |
-| `replace` | `boolean` | Use `location.replace()` instead of `href` assignment |
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `to` | `string` | — | **Required.** Step ID (for `operation: "step"`) or full URL (for `operation: "external"`) |
+| `operation` | `"step"` \| `"external"` | `"step"` | Navigation mode (preferred) |
+| `type` *(deprecated)* | `"step"` \| `"external"` | — | Legacy field, will be removed in future releases |
+| `replace` | `boolean` | `false` | Use `location.replace()` instead of `href` assignment |
 
 ### `sequence`
 
@@ -620,7 +621,7 @@ Run multiple actions in order, waiting for each to complete.
     "actions": [
       { "type": "setState",  "payload": { "key": "step", "value": 2 } },
       { "type": "ui",        "payload": { "operation": "scrollTo", "params": { "top": 0 } } },
-      { "type": "navigation","payload": { "to": "checkout", "type": "step" } }
+      { "type": "navigation","payload": { "to": "checkout", "operation": "step" } }
     ]
   }
 }
@@ -636,7 +637,7 @@ Branch on a state key or JavaScript expression.
   "payload": {
     "condition": "hasAgreedToTerms",
     "onTrue": [
-      { "type": "navigation", "payload": { "to": "checkout", "type": "step" } }
+      { "type": "navigation", "payload": { "to": "checkout", "operation": "step" } }
     ],
     "onFalse": [
       { "type": "setState", "payload": { "key": "showTermsError", "value": true } }

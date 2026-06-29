@@ -49,7 +49,10 @@ interface NavigationAction {
     type: 'navigation';
     payload: {
         to: string;
-        type: 'step' | 'external';
+        /** @deprecated use `operation` instead */
+        type?: 'step' | 'external';
+        /** Preferred field for navigation target type */
+        operation?: 'step' | 'external';
         replace?: boolean;
     };
 }

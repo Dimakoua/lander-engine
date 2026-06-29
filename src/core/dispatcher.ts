@@ -199,8 +199,10 @@ export class ActionDispatcher {
       }
 
       case 'navigation': {
-        const { to, type, replace } = action.payload;
-        if (type === 'external') {
+        const { to, replace, operation, type } = action.payload;
+        // Prefer 'operation', fallback to deprecated 'type', default to 'step'
+        const navType = operation ?? type ?? 'step';
+        if (navType === 'external') {
           if (replace) {
             window.location.replace(to);
           } else {
