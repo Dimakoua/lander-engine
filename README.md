@@ -967,21 +967,26 @@ If you leave this out, a simple built-in unbranded HTML fallback will be display
 
 ## Domain Routing
 
-Map custom domains to specific campaigns by creating a `routing.config.js` in your project root. At build time, Lander reads each campaign's `flow.json` to resolve the `initialStep`, then generates three routing artifacts targeting different static hosts.
-
-### `routing.config.js`
+Map custom domains to specific campaigns, optionally specifying a basePath and defaultStep, by creating a `routing.config.js` in your project root. At build time, Lander reads each campaign's `flow.json` to resolve the `initialStep`, then generates three routing artifacts targeting different static hosts.
 
 ```js
 // routing.config.js
 export default {
+  // Simple mapping (equivalent to previous behavior)
   'campaign-a.com':     'campaign_alpha',
-  'www.campaign-a.com': 'campaign_alpha',
-  'campaign-b.com':     'campaign_beta',
-  'promo.example.com':  'campaign_promo',
+  // Mapping with a custom base path – the redirect will be prefixed with this path
+  'promo.example.com':  { campaign: 'campaign_promo', basePath: '/promo' },
+  // Mapping to the site root – no campaign segment in the URL
+  'example.com':        { campaign: 'campaign_alpha', basePath: '/' },
+  // Mapping with a custom default step instead of the flow's initialStep
+  'beta.example.com':   { campaign: 'campaign_beta', defaultStep: 'landing' },
 };
 ```
 
-Each key is a hostname (no scheme, no trailing slash) and each value is a campaign ID — the folder name inside your `json_configs/` directory.
+Each key is a hostname (no scheme, no trailing slash). The value can be a string (campaign ID) for the default behavior, or an object to specify additional options:
+- `campaign` (required): the campaign folder name inside `json_configs/`.
+- `basePath` (optional): a URL path prefix for the redirect. Use `/` to map directly to the root, otherwise the path will be prefixed before the campaign segment.
+- `defaultStep` (optional): overrides the `initialStep` from the campaign's `flow.json`.
 
 ### Generated artifacts
 
