@@ -857,6 +857,35 @@ const c = colors[type];
 
 ---
 
+## Telemetry & Analytics
+
+Lander Engine includes a built-in Telemetry Adapter System to automatically track funnel milestones across all your campaigns. Configure providers in your `lander.config.js` or a campaign's `layout.json`.
+
+```json
+"telemetry": {
+  "ga4": { "measurementId": "G-XXXXXXXXXX" },
+  "metaPixel": { "pixelId": "XXXXXXXXXX" },
+  "posthog": { "apiKey": "phc_XXXXXXXXXX" },
+  "webhook": { "endpoint": "https://your-api.com/track" }
+}
+```
+
+Once configured, Lander automatically dispatches standard events (`view_step`, `click_cta`, `submit_lead`, `open_modal`) asynchronously without blocking the UI. Ad-blockers are handled gracefully.
+
+You can also manually track custom events using the `telemetry` action type:
+
+```json
+{
+  "type": "telemetry",
+  "payload": {
+    "name": "custom",
+    "payload": { "feature": "dark_mode_toggled" }
+  }
+}
+```
+
+---
+
 ## Custom Actions
 
 Create `.ts` or `.js` files in your `actions/` directory. Export an object (default or named `actions`) where each key is an action type name and each value is the handler function.
