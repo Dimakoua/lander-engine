@@ -1045,6 +1045,45 @@ Usage: lander <command> [options]
 
 ---
 
+## A/B Testing & Variant Allocation
+
+Lander Engine natively supports Multi-Armed Bandit and weighted A/B testing out of the box, with built-in telemetry hydration and URL overriding for QA.
+
+You define your allocations inside your campaign's `flow.json`:
+
+```json
+{
+  "initialStep": "main",
+  "variants": {
+    "strategy": "weighted",
+    "trafficSplit": {
+      "control": 70,
+      "variant_b": 30
+    },
+    "sticky": true
+  },
+  "steps": {
+    "main": {
+      "type": "normal",
+      "next": "checkout"
+    }
+  }
+}
+```
+
+### Strategies
+- **`weighted`**: Randomly assigns users to a variant based on the numeric ratios provided in `trafficSplit`. Non-balanced ratios (e.g. `{ a: 10, b: 10 }`) are automatically normalized (to 50% each).
+- **`bandit`**: Follows an epsilon-greedy Multi-Armed Bandit strategy to optimize performance by dynamically distributing traffic.
+- **Stickiness**: If `"sticky": true` (default), the assigned variant persists across page reloads via `sessionStorage` and cookies (`lander_variant_<campaignId>`).
+
+### URL Forcing
+If you want to bypass the random allocation for QA or specific marketing links, pass the `?variant=<id>` query parameter (e.g., `?variant=variant_b`). This overrides the allocation logic and deterministically assigns the visitor to the specified variant, persisting it as sticky if enabled.
+
+### Telemetry
+When a variant is assigned, a CustomEvent `lander:variant_assigned` is emitted globally to the `window`, making it easy to hook into external analytics pixels, and the assigned variant ID is recorded in the global Nanostores state.
+
+---
+
 ## TypeScript Reference
 
 The full type system is exported from the root `lander-engine` specifier.
