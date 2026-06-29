@@ -454,7 +454,7 @@ Each file in `steps/` defines one page/step in your campaign. The filename (with
         "onCtaClick": [
           {
             "type": "navigation",
-            "payload": { "to": "checkout", "type": "step" }
+            "payload": { "to": "checkout", "operation": "step" }
           }
         ]
       }
@@ -571,7 +571,7 @@ Make an HTTP request. Sets a loading flag automatically during the request.
     "stateKey":   "leadResponse",
     "loadingKey": "isSubmitting",
     "onSuccess": [
-      { "type": "navigation", "payload": { "to": "thanks", "type": "step" } }
+      { "type": "navigation", "payload": { "to": "thanks", "operation": "step" } }
     ],
     "onError": [
       { "type": "setState", "payload": { "key": "submitError", "value": true } }
@@ -598,16 +598,17 @@ Make an HTTP request. Sets a loading flag automatically during the request.
 Navigate to another step or an external URL.
 
 ```json
-{ "type": "navigation", "payload": { "to": "checkout", "type": "step" } }
+{ "type": "navigation", "payload": { "to": "checkout", "operation": "step" } }
 
-{ "type": "navigation", "payload": { "to": "https://example.com", "type": "external", "replace": true } }
+{ "type": "navigation", "payload": { "to": "https://example.com", "operation": "external", "replace": true } }
 ```
 
-| Field | Type | Description |
-|---|---|---|
-| `to` | `string` | Step ID (for `type: "step"`) or full URL (for `type: "external"`) |
-| `type` | `"step"` \| `"external"` | Navigation mode |
-| `replace` | `boolean` | Use `location.replace()` instead of `href` assignment |
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `to` | `string` | — | **Required.** Step ID (for `operation: "step"`) or full URL (for `operation: "external"`) |
+| `operation` | `"step"` \| `"external"` | `"step"` | Navigation mode (preferred) |
+| `type` *(deprecated)* | `"step"` \| `"external"` | — | Legacy field, will be removed in future releases |
+| `replace` | `boolean` | `false` | Use `location.replace()` instead of `href` assignment |
 
 ### `sequence`
 
@@ -620,7 +621,7 @@ Run multiple actions in order, waiting for each to complete.
     "actions": [
       { "type": "setState",  "payload": { "key": "step", "value": 2 } },
       { "type": "ui",        "payload": { "operation": "scrollTo", "params": { "top": 0 } } },
-      { "type": "navigation","payload": { "to": "checkout", "type": "step" } }
+      { "type": "navigation","payload": { "to": "checkout", "operation": "step" } }
     ]
   }
 }
@@ -636,7 +637,7 @@ Branch on a state key or JavaScript expression.
   "payload": {
     "condition": "hasAgreedToTerms",
     "onTrue": [
-      { "type": "navigation", "payload": { "to": "checkout", "type": "step" } }
+      { "type": "navigation", "payload": { "to": "checkout", "operation": "step" } }
     ],
     "onFalse": [
       { "type": "setState", "payload": { "key": "showTermsError", "value": true } }
@@ -967,21 +968,26 @@ If you leave this out, a simple built-in unbranded HTML fallback will be display
 
 ## Domain Routing
 
-Map custom domains to specific campaigns by creating a `routing.config.js` in your project root. At build time, Lander reads each campaign's `flow.json` to resolve the `initialStep`, then generates three routing artifacts targeting different static hosts.
-
-### `routing.config.js`
+Map custom domains to specific campaigns, optionally specifying a basePath and defaultStep, by creating a `routing.config.js` in your project root. At build time, Lander reads each campaign's `flow.json` to resolve the `initialStep`, then generates three routing artifacts targeting different static hosts.
 
 ```js
 // routing.config.js
 export default {
+  // Simple mapping (equivalent to previous behavior)
   'campaign-a.com':     'campaign_alpha',
-  'www.campaign-a.com': 'campaign_alpha',
-  'campaign-b.com':     'campaign_beta',
-  'promo.example.com':  'campaign_promo',
+  // Mapping with a custom base path – the redirect will be prefixed with this path
+  'promo.example.com':  { campaign: 'campaign_promo', basePath: '/promo' },
+  // Mapping to the site root – no campaign segment in the URL
+  'example.com':        { campaign: 'campaign_alpha', basePath: '/' },
+  // Mapping with a custom default step instead of the flow's initialStep
+  'beta.example.com':   { campaign: 'campaign_beta', defaultStep: 'landing' },
 };
 ```
 
-Each key is a hostname (no scheme, no trailing slash) and each value is a campaign ID — the folder name inside your `json_configs/` directory.
+Each key is a hostname (no scheme, no trailing slash). The value can be a string (campaign ID) for the default behavior, or an object to specify additional options:
+- `campaign` (required): the campaign folder name inside `json_configs/`.
+- `basePath` (optional): a URL path prefix for the redirect. Use `/` to map directly to the root, otherwise the path will be prefixed before the campaign segment.
+- `defaultStep` (optional): overrides the `initialStep` from the campaign's `flow.json`.
 
 ### Generated artifacts
 

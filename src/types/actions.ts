@@ -40,7 +40,10 @@ export interface NavigationAction {
   type: 'navigation';
   payload: {
     to: string; // Internal step ID or external URL
-    type: 'step' | 'external';
+    /** @deprecated use `operation` instead */
+    type?: 'step' | 'external';
+    /** Preferred field for navigation target type */
+    operation?: 'step' | 'external';
     replace?: boolean;
   };
 }

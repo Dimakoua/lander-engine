@@ -27,25 +27,62 @@ export class ActionDispatcher {
    * canonical URL the router should navigate to.
    */
   private resolveInternalUrl(to: string): string {
-    // Normalise: ensure we always have /campaign/step
-    const toParts = to.replace(/^\//, '').split('/').filter(Boolean);
-    if (toParts.length === 1) {
-      const campaign = window.location.pathname.split('/').filter(Boolean)[0];
-      if (campaign) toParts.unshift(campaign);
+    let basePath = (window as any).__landerBasePath;
+
+    // Fallback if resolving script isn't properly initialized yet
+    if (basePath === undefined) {
+      const currentPathParts = window.location.pathname.replace(/^\//, '').split('/').filter(Boolean);
+      const campaign = currentPathParts[0] || '';
+      basePath = campaign ? `/${campaign}` : '/';
     }
-    if (toParts.length < 2) return to;
+
+    // Determine the target URL format based on how it was passed
+    // If it's an absolute path that starts with the basePath, use it directly
+    let stepTarget = to;
+    if (to.startsWith('/')) {
+        // If it looks like a full path under basePath, extract the step
+        if (basePath !== '/' && to.startsWith(basePath + '/')) {
+            stepTarget = to.substring(basePath.length + 1);
+        } else if (basePath === '/') {
+            stepTarget = to.substring(1);
+        }
+    }
+
+    // Normalise to just get the step name parts
+    const stepParts = stepTarget.replace(/^\//, '').split('/').filter(Boolean);
+    if (stepParts.length === 0) return to;
+
+    // If they provided /campaign/step but we're on a custom basePath, we should just use the step
+    let stepSlug = stepParts[stepParts.length - 1];
+
+    const currentCampaignPathParts = basePath === '/' ? [] : basePath.replace(/^\//, '').split('/');
+    const campaignId = currentCampaignPathParts.length > 0 ? currentCampaignPathParts[0] : window.location.pathname.replace(/^\//, '').split('/')[0] || '';
 
     const configs: Record<string, { variants: string[]; hasMobileRoute: boolean }> =
       (window as any).__landerCampaignConfigs ?? {};
 
-    const campaignId = toParts[0];
+    // Try to find the config. If we are on root (basePath === '/'), campaignId might be known implicitly by the script.
+    // If not, we might need to rely on the window.__landerResolveUrl which uses proper state.
+    // Actually, we can just defer to window.__landerResolveUrl directly to avoid duplicating the entire logic!
+    if (typeof (window as any).__landerResolveUrl === 'function') {
+         // Construct what a raw un-resolved url would look like for the resolver
+         let rawUrl = basePath === '/' ? `/${stepSlug}` : `${basePath}/${stepSlug}`;
+         const resolved = (window as any).__landerResolveUrl(rawUrl);
+         if (resolved) return resolved;
+         // If it returned null, it means it's already correct or unresolvable.
+         return rawUrl;
+    }
+
+    // Fallback if __landerResolveUrl isn't available for some reason (e.g. tests)
     const config = configs[campaignId];
-    if (!config) return to; // unknown campaign — return as-is
+    if (!config) {
+         let rawUrl = basePath === '/' ? `/${stepSlug}` : `${basePath}/${stepSlug}`;
+         return rawUrl;
+    }
 
     const { variants, hasMobileRoute } = config;
 
     // Strip any existing suffixes so we always start from the bare step slug
-    let stepSlug = toParts[toParts.length - 1];
     const slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, -7) : stepSlug;
     let baseSlug = slugNoMobile;
     for (const v of variants) {
@@ -76,8 +113,7 @@ export class ActionDispatcher {
     if (targetVariant) targetSlug += '.' + targetVariant;
     if (isMobile)      targetSlug += '.mobile';
 
-    toParts[toParts.length - 1] = targetSlug;
-    return '/' + toParts.join('/');
+    return basePath === '/' ? `/${targetSlug}` : `${basePath}/${targetSlug}`;
   }
 
   /** Navigate internally using Astro's SPA router when available. */
@@ -163,8 +199,10 @@ export class ActionDispatcher {
       }
 
       case 'navigation': {
-        const { to, type, replace } = action.payload;
-        if (type === 'external') {
+        const { to, replace, operation, type } = action.payload;
+        // Prefer 'operation', fallback to deprecated 'type', default to 'step'
+        const navType = operation ?? type ?? 'step';
+        if (navType === 'external') {
           if (replace) {
             window.location.replace(to);
           } else {
@@ -249,14 +287,19 @@ export class ActionDispatcher {
         let targetPath = '/';
 
         if (typeof nextStep === 'string') {
-          const currentPathParts = window.location.pathname.split('/').filter(Boolean);
-          const campaign = params?.campaignId || currentPathParts[0];
-
-          if (campaign) {
-            targetPath = `/${campaign}/${nextStep}`;
+          const basePath = (window as any).__landerBasePath;
+          if (basePath) {
+             targetPath = basePath === '/' ? `/${nextStep}` : `${basePath}/${nextStep}`;
           } else {
-            console.warn('goToNextStep: cannot infer campaign, defaulting to /');
-            targetPath = `/${nextStep}`;
+            const currentPathParts = window.location.pathname.split('/').filter(Boolean);
+            const campaign = params?.campaignId || currentPathParts[0];
+
+            if (campaign) {
+              targetPath = `/${campaign}/${nextStep}`;
+            } else {
+              console.warn('goToNextStep: cannot infer campaign, defaulting to /');
+              targetPath = `/${nextStep}`;
+            }
           }
         } else {
           console.warn('goToNextStep requires next step string in params.next');

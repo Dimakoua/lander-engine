@@ -1,11 +1,20 @@
+export type DomainRouteConfig = {
+  campaign: string;
+  basePath?: string; // e.g., '/' (root), '/welcome', or default campaign path
+  defaultStep?: string; // Optional custom starting step override
+};
+
 /**
- * Maps domain names to campaign IDs.
+ * Maps domain names to campaign IDs or detailed route configurations.
  * Defined in `routing.config.js` in the project root.
  *
  * @example
- * { "campaign-a.com": "campaign_alpha", "campaign-b.com": "campaign_beta" }
+ * {
+ *   "campaign-a.com": "campaign_alpha",
+ *   "campaign-b.com": { campaign: "campaign_beta", basePath: "/" }
+ * }
  */
-export type RoutingConfig = Record<string, string>;
+export type RoutingConfig = Record<string, string | DomainRouteConfig>;
 
 export interface LanderPlugin {
   name: string;
