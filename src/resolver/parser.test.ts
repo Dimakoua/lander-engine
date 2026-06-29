@@ -83,17 +83,19 @@ describe('ConfigParser', () => {
     const campaignId = 'test-campaign';
     const mockFlow = { initialStep: 'step1' };
     const mockTheme = { colors: { primary: 'red' } };
+    const mockLayout = { errorPages: { '404': { component: 'Custom404' } } };
     const mockStep = { sections: [] };
     const mockState = {};
 
     (fs.pathExists as any).mockImplementation((p: string) => {
-      if (p.includes('flow.json') || p.includes('theme.json') || p.includes('step1.json')) return true;
+      if (p.includes('flow.json') || p.includes('theme.json') || p.includes('layout.json') || p.includes('step1.json')) return true;
       return false;
     });
 
     (fs.readJson as any).mockImplementation((p: string) => {
       if (p.includes('flow.json')) return mockFlow;
       if (p.includes('theme.json')) return mockTheme;
+      if (p.includes('layout.json')) return mockLayout;
       if (p.includes('step1.json')) return mockStep;
       if (p.includes('state.json')) return mockState;
       return {};
@@ -106,6 +108,7 @@ describe('ConfigParser', () => {
     expect(config.campaignId).toBe(campaignId);
     expect(config.flow).toEqual(mockFlow);
     expect(config.theme).toEqual(mockTheme);
+    expect(config.layout).toEqual(mockLayout);
     expect(config.steps.step1).toEqual(mockStep);
     expect(config.state).toEqual(mockState);
   });

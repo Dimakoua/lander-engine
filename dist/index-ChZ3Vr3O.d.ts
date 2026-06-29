@@ -48,6 +48,10 @@ interface LayoutConfig {
         component: string;
         props?: Record<string, any>;
     };
+    errorPages?: Record<string, {
+        component: string;
+        props?: Record<string, any>;
+    }>;
     scripts?: Array<{
         src: string;
         async?: boolean;
