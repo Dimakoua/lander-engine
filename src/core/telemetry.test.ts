@@ -7,6 +7,9 @@ describe('TelemetryManager', () => {
   beforeEach(() => {
     telemetry = new TelemetryManager();
     // Reset window mock for tracking APIs
+    if (typeof window === 'undefined') {
+        global.window = {} as any;
+    }
     (window as any).gtag = vi.fn();
     (window as any).fbq = vi.fn();
     (window as any).posthog = { capture: vi.fn() };

@@ -21,7 +21,7 @@ describe('WorkspaceGenerator', () => {
       actionsDir: 'actions',
       outputDir: 'dist',
     };
-    workspaceDir = path.resolve(config.projectRoot, 'node_modules/.lander-engine');
+    workspaceDir = path.resolve(config.projectRoot, '.lander-engine');
     vi.clearAllMocks();
   });
 

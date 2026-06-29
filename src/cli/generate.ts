@@ -10,7 +10,7 @@ export class WorkspaceGenerator {
 
   constructor(config: LanderConfig) {
     this.config = config;
-    this.workspaceDir = path.resolve(config.projectRoot, 'node_modules/.lander-engine');
+    this.workspaceDir = path.resolve(config.projectRoot, '.lander-engine');
   }
 
   /**

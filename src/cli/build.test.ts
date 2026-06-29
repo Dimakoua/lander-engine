@@ -137,10 +137,7 @@ describe('Builder', () => {
 
     it('should start preview server', async () => {
       (fs.existsSync as any).mockReturnValue(true);
-      const mockServer = {
-        on: vi.fn(),
-        listen: vi.fn((port, callback) => callback && callback()),
-      };
+      const mockServer = { listen: vi.fn((port, callback) => callback()) };
       (http.createServer as any).mockReturnValue(mockServer);
       const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
