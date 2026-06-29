@@ -18,6 +18,7 @@ export default defineConfig({
     compressor()
   ],
   output: 'static',
+  outDir: process.env.LANDER_OUTPUT_DIR || '../../dist',
   build: {
     format: 'directory'
   },
