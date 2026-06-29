@@ -117,7 +117,7 @@ describe('ActionDispatcher', () => {
     expect(getState('loading_apiData')).toBe(false);
   });
 
-  it('should resolve internal URLs correctly', async () => {
+  it('should resolve internal URLs correctly without basePath configured (fallback)', async () => {
     window.location.pathname = '/campaign-a/step-1';
     (window as any).__landerCampaignConfigs = {
       'campaign-a': {
@@ -139,5 +139,57 @@ describe('ActionDispatcher', () => {
 
     // The dispatcher should navigate to /campaign-a/step-2.v1.mobile
     expect((window as any).__landerNavigate).toHaveBeenCalledWith('/campaign-a/step-2.v1.mobile');
+  });
+
+  it('should resolve internal URLs correctly with root basePath (/)', async () => {
+    window.location.pathname = '/step-1';
+    (window as any).__landerBasePath = '/';
+    (window as any).__landerCampaignConfigs = {
+      'campaign-a': { // Root campaigns won't pass campaignId explicitly through path
+        variants: ['v1', 'v2'],
+        hasMobileRoute: true,
+      }
+    };
+    // Mock the external resolve function that would be loaded on root paths
+    (window as any).__landerResolveUrl = vi.fn().mockReturnValue('/step-2.v1.mobile');
+
+    (localStorage.getItem as any).mockReturnValue('v1');
+    (navigator as any).userAgent = 'iPhone';
+
+    await dispatcher.dispatch({
+      type: 'navigation',
+      payload: {
+        to: 'step-2',
+        type: 'step',
+      },
+    });
+
+    // The dispatcher should navigate to /step-2.v1.mobile
+    expect((window as any).__landerResolveUrl).toHaveBeenCalledWith('/step-2');
+    expect((window as any).__landerNavigate).toHaveBeenCalledWith('/step-2.v1.mobile');
+  });
+
+  it('should resolve internal URLs correctly with custom basePath', async () => {
+    window.location.pathname = '/welcome/step-1';
+    (window as any).__landerBasePath = '/welcome';
+    (window as any).__landerCampaignConfigs = {
+      'campaign-a': {
+        variants: [],
+        hasMobileRoute: false,
+      }
+    };
+    // Providing a custom resolve fallback for the dispatcher manually
+    (window as any).__landerResolveUrl = vi.fn().mockReturnValue('/welcome/step-2');
+
+    await dispatcher.dispatch({
+      type: 'navigation',
+      payload: {
+        to: 'step-2',
+        type: 'step',
+      },
+    });
+
+    expect((window as any).__landerResolveUrl).toHaveBeenCalledWith('/welcome/step-2');
+    expect((window as any).__landerNavigate).toHaveBeenCalledWith('/welcome/step-2');
   });
 });

@@ -1,4 +1,6 @@
 ---
+import fs from 'fs';
+import path from 'path';
 import { ConfigParser, resolveCascadingConfig } from 'lander-engine/resolver';
 import { ViewTransitions } from 'astro:transitions';
 import '../registry-manifest'; 
@@ -18,6 +20,15 @@ export async function getStaticPaths() {
   const parser = new ConfigParser(jsonConfigsDir);
   const campaigns = await parser.getCampaigns();
   const paths = [];
+
+  // Read the normalized domain routing configuration
+  let domainRouting: Record<string, { campaign: string; basePath: string; defaultStep?: string }> = {};
+  try {
+    const routingContent = fs.readFileSync(path.join(process.cwd(), 'src/domain-routing.json'), 'utf8');
+    domainRouting = JSON.parse(routingContent);
+  } catch (e) {
+    console.warn('Could not read domain-routing.json, proceeding with defaults', e);
+  }
 
   for (const campaignId of campaigns) {
     const base = await parser.loadCampaignBase(campaignId);
@@ -49,6 +60,18 @@ export async function getStaticPaths() {
       }
     }
 
+    // Find all basePaths assigned to this campaign
+    const basePaths = new Set<string>();
+    for (const [_, routeConfig] of Object.entries(domainRouting)) {
+      if (routeConfig.campaign === campaignId) {
+        basePaths.add(routeConfig.basePath || `/${campaignId}`);
+      }
+    }
+    // Default fallback if campaign isn't explicitly mapped
+    if (basePaths.size === 0) {
+      basePaths.add(`/${campaignId}`);
+    }
+
     /**
      * Build the resolved props for a single page path.
      * Priority: Base < Device (mobile) < Variant < Variant+Device
@@ -58,6 +81,7 @@ export async function getStaticPaths() {
       isMobile: boolean,
       variant: string | null,
       hasMobileRoute: boolean,
+      basePath: string,
     ) {
       const deviceOverride   = isMobile ? mobileOverrides : undefined;
       const variantOverride  = variant ? variantOverridesMap[variant] : undefined;
@@ -83,59 +107,70 @@ export async function getStaticPaths() {
         allSteps: resolvedConfig.steps,
         modalConfigs: resolvedConfig.flow?.modals ?? {},
         layout: resolvedConfig.layout ?? {},
+        basePath,
+        domainRouting,
       };
     }
 
-    // Campaign root → server-redirect to initial step (variant assignment happens client-side)
-    const initialStepId = base.flow.initialStep;
-    if (base.steps[initialStepId]) {
-      paths.push({
-        params: { slug: campaignId },
-        props: {
-          isRedirect: true,
-          redirectTo: `/${campaignId}/${initialStepId}`,
-        },
-      });
-    }
+    for (const bp of basePaths) {
+      const prefix = bp === '/' ? '' : bp.replace(/^\//, '');
 
-    for (const [stepId] of Object.entries(base.steps)) {
-      const stepType = base.flow.steps[stepId]?.type;
-      // Popup steps render as modals inside normal pages — no dedicated routes
-      if (stepType === 'popup') continue;
-
-      // 1. Base desktop
-      paths.push({
-        params: { slug: `${campaignId}/${stepId}` },
-        props: buildProps(stepId, false, null, hasMobile),
-      });
-
-      // 2. Base mobile (only if a mobile/ directory exists)
-      if (hasMobile) {
+      // Campaign root → server-redirect to initial step (variant assignment happens client-side)
+      const initialStepId = base.flow.initialStep;
+      if (base.steps[initialStepId]) {
         paths.push({
-          params: { slug: `${campaignId}/${stepId}.mobile` },
-          props: buildProps(stepId, true, null, hasMobile),
+          params: { slug: prefix === '' ? undefined : prefix },
+          props: {
+            isRedirect: true,
+            redirectTo: bp === '/' ? `/${initialStepId}` : `${bp}/${initialStepId}`,
+          },
         });
       }
 
-      // 3. Variant routes
-      for (const variant of variants) {
-        const vmo = variantMobileOverridesMap[variant];
-        // Generate a variant mobile route when the campaign has base mobile overrides
-        // OR when this variant has its own mobile overrides.
-        const hasVariantMobile = hasMobile || Object.keys(vmo).length > 0;
+      for (const [stepId] of Object.entries(base.steps)) {
+        const stepType = base.flow.steps[stepId]?.type;
+        // Popup steps render as modals inside normal pages — no dedicated routes
+        if (stepType === 'popup') continue;
 
-        // Variant desktop
+        const makeSlug = (suffix: string) => {
+          const p = prefix ? `${prefix}/${stepId}${suffix}` : `${stepId}${suffix}`;
+          return p === '' ? undefined : p;
+        };
+
+        // 1. Base desktop
         paths.push({
-          params: { slug: `${campaignId}/${stepId}.${variant}` },
-          props: buildProps(stepId, false, variant, hasVariantMobile),
+          params: { slug: makeSlug('') },
+          props: buildProps(stepId, false, null, hasMobile, bp),
         });
 
-        // Variant mobile
-        if (hasVariantMobile) {
+        // 2. Base mobile (only if a mobile/ directory exists)
+        if (hasMobile) {
           paths.push({
-            params: { slug: `${campaignId}/${stepId}.${variant}.mobile` },
-            props: buildProps(stepId, true, variant, hasVariantMobile),
+            params: { slug: makeSlug('.mobile') },
+            props: buildProps(stepId, true, null, hasMobile, bp),
           });
+        }
+
+        // 3. Variant routes
+        for (const variant of variants) {
+          const vmo = variantMobileOverridesMap[variant];
+          // Generate a variant mobile route when the campaign has base mobile overrides
+          // OR when this variant has its own mobile overrides.
+          const hasVariantMobile = hasMobile || Object.keys(vmo).length > 0;
+
+          // Variant desktop
+          paths.push({
+            params: { slug: makeSlug(`.${variant}`) },
+            props: buildProps(stepId, false, variant, hasVariantMobile, bp),
+          });
+
+          // Variant mobile
+          if (hasVariantMobile) {
+            paths.push({
+              params: { slug: makeSlug(`.${variant}.mobile`) },
+              props: buildProps(stepId, true, variant, hasVariantMobile, bp),
+            });
+          }
         }
       }
     }
@@ -159,9 +194,11 @@ const {
   allSteps,
   modalConfigs,
   layout,
+  basePath,
+  domainRouting,
 } = Astro.props;
 
-// Campaign root redirect: /{campaignId} → /{campaignId}/{initialStep}
+// Campaign root redirect: /{campaignId} → /{campaignId}/{initialStep} or / → /{initialStep}
 if (isRedirect && redirectTo) {
   return Astro.redirect(redirectTo, 302);
 }
@@ -237,22 +274,69 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
       import '../registry-manifest';
     </script>
 
-    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId }}>
+    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId, basePath, domainRouting }}>
       (function () {
         // Register config globally
         window.__landerCampaignConfigs = window.__landerCampaignConfigs || {};
         window.__landerCampaignConfigs[campaignId] = { variants: variants, hasMobileRoute: hasMobileRoute };
+        window.__landerBasePath = window.__landerBasePath || basePath || '/' + campaignId;
+        window.__landerDomainRouting = window.__landerDomainRouting || domainRouting || {};
+
+        // Execute domain level redirect if the current host is mapped to a different route
+        var host = window.location.hostname;
+        var hostMapping = window.__landerDomainRouting[host];
+        if (hostMapping) {
+          var expectedBase = hostMapping.basePath || '/' + hostMapping.campaign;
+          if (expectedBase === '/') expectedBase = '';
+
+          // If the page was loaded with a different prefix than the domain's expected base path, redirect
+          if (expectedBase !== '' && !window.location.pathname.startsWith(expectedBase + '/')) {
+             if (window.location.pathname === expectedBase) {
+                 // valid root for the campaign
+             } else {
+                 var target = expectedBase + '/' + (hostMapping.defaultStep || 'main');
+                 window.location.replace(target + window.location.search);
+                 return;
+             }
+          }
+        }
 
         // Define the shared resolver function on the window
         window.__landerResolveUrl = function(pathname) {
           if (!pathname) return null;
           
           var parts = pathname.replace(/\/$/, '').split('/').filter(Boolean);
-          if (parts.length < 2) return null;
+          if (parts.length === 0) return null;
 
-          var cId = parts[0];
+          var cId;
+          var bpParts = 0;
+          if (window.__landerBasePath === '/') {
+              cId = campaignId;
+              bpParts = 0;
+          } else {
+              var bpSegments = window.__landerBasePath.replace(/^\//, '').split('/');
+              var match = true;
+              for (var i = 0; i < bpSegments.length; i++) {
+                 if (parts[i] !== bpSegments[i]) {
+                     match = false;
+                     break;
+                 }
+              }
+              if (match) {
+                 cId = campaignId;
+                 bpParts = bpSegments.length;
+              } else {
+                 // Fallback for multi-campaign setups without custom domain mapping matching this request
+                 cId = parts[0];
+                 bpParts = 1;
+              }
+          }
+
           var config = window.__landerCampaignConfigs[cId];
           if (!config) return null;
+
+          // Need at least one step segment
+          if (parts.length <= bpParts) return null;
 
           var stepSlug = parts[parts.length - 1];
           var slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, stepSlug.length - 7) : stepSlug;
