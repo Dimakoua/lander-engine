@@ -69,3 +69,14 @@ export function getState(key: string) {
   const fromStorage = loadPersistedState();
   return fromStorage ? fromStorage[key] : undefined;
 }
+
+/**
+ * Assigns a variant to the state and dispatches an event.
+ */
+export function assignVariant(variant: string) {
+  $state.setKey('variant', variant);
+  persistState();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('lander:variant_assigned', { detail: { variant } }));
+  }
+}

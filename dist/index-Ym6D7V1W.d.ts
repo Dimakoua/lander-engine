@@ -17,6 +17,10 @@ declare function toggleState(key: string): void;
  * Retrieves a value from the global state.
  */
 declare function getState(key: string): any;
+/**
+ * Assigns a variant to the state and dispatches an event.
+ */
+declare function assignVariant(variant: string): void;
 
 type ActionType = 'setState' | 'toggleState' | 'rest' | 'navigation' | 'sequence' | 'conditional' | 'ui';
 interface SetStateAction {
@@ -170,4 +174,4 @@ declare function watchLoadingAction(actions: any | undefined, callback: (state: 
  */
 declare function getLoadingActionState(actions?: any, explicitLoadingKeys?: string[]): LoadingActionResult;
 
-export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type ToggleStateAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, dispatcher as g, getLoadingActionState as h, getState as i, hydrateState as j, registry as r, setState as s, toggleState as t, watchLoadingAction as w };
+export { $state as $, type Action as A, type ComponentMap as C, type NavigationAction as N, type RestAction as R, type SequenceAction as S, type ToggleStateAction as T, type UIAction as U, ActionDispatcher as a, type ActionHandler as b, type ActionMap as c, type ActionType as d, type ConditionalAction as e, type SetStateAction as f, assignVariant as g, dispatcher as h, getLoadingActionState as i, getState as j, hydrateState as k, registry as r, setState as s, toggleState as t, watchLoadingAction as w };

@@ -60,6 +60,12 @@ export interface ModalConfig {
   animationDuration?: number; // ms
 }
 
+export interface VariantAllocationConfig {
+  trafficSplit?: Record<string, number>;
+  strategy?: 'weighted' | 'bandit';
+  sticky?: boolean;
+}
+
 export interface FlowConfig {
   initialStep: string;
   steps: Record<string, {
@@ -67,6 +73,7 @@ export interface FlowConfig {
     next?: string;
   }>;
   modals?: Record<string, ModalConfig>;
+  variants?: VariantAllocationConfig;
 }
 
 export interface StepSection {

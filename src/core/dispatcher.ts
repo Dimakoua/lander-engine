@@ -2,6 +2,7 @@ import { Action } from '@/types/actions';
 import { setState, toggleState, $state } from './state';
 import { registry } from './registry';
 import { getRestLoadingKey } from './loading';
+import { selectVariant, VariantAllocationConfig } from './experiment';
 
 export class ActionDispatcher {
   /**
@@ -58,7 +59,7 @@ export class ActionDispatcher {
     const currentCampaignPathParts = basePath === '/' ? [] : basePath.replace(/^\//, '').split('/');
     const campaignId = currentCampaignPathParts.length > 0 ? currentCampaignPathParts[0] : window.location.pathname.replace(/^\//, '').split('/')[0] || '';
 
-    const configs: Record<string, { variants: string[]; hasMobileRoute: boolean }> =
+    const configs: Record<string, { variants: string[]; hasMobileRoute: boolean; allocation?: VariantAllocationConfig }> =
       (window as any).__landerCampaignConfigs ?? {};
 
     // Try to find the config. If we are on root (basePath === '/'), campaignId might be known implicitly by the script.
@@ -92,17 +93,8 @@ export class ActionDispatcher {
       }
     }
 
-    // Determine target variant from localStorage
-    let targetVariant: string | null = null;
-    if (variants.length > 0) {
-      const stored = localStorage.getItem(`lander-variant-${campaignId}`);
-      if (stored && variants.includes(stored)) {
-        targetVariant = stored;
-      } else {
-        targetVariant = variants[Math.floor(Math.random() * variants.length)];
-        localStorage.setItem(`lander-variant-${campaignId}`, targetVariant);
-      }
-    }
+    // Determine target variant
+    let targetVariant: string | null = selectVariant(campaignId, variants, config.allocation);
 
     // Determine mobile
     const isMobile = hasMobileRoute && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(

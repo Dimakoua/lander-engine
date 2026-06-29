@@ -107,6 +107,7 @@ export async function getStaticPaths() {
         flow: resolvedConfig.flow,
         allSteps: resolvedConfig.steps,
         modalConfigs: resolvedConfig.flow?.modals ?? {},
+        allocation: resolvedConfig.flow?.variants,
         layout: resolvedConfig.layout ?? {},
         basePath,
         domainRouting,
@@ -194,6 +195,7 @@ const {
   flow,
   allSteps,
   modalConfigs,
+  allocation,
   layout,
   basePath,
   domainRouting,
@@ -276,11 +278,11 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
       import '../registry-manifest';
     </script>
 
-    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId, basePath, domainRouting }}>
+    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId, basePath, domainRouting, allocation }}>
       (function () {
         // Register config globally
         window.__landerCampaignConfigs = window.__landerCampaignConfigs || {};
-        window.__landerCampaignConfigs[campaignId] = { variants: variants, hasMobileRoute: hasMobileRoute };
+        window.__landerCampaignConfigs[campaignId] = { variants: variants, hasMobileRoute: hasMobileRoute, allocation: allocation };
         window.__landerBasePath = window.__landerBasePath || basePath || '/' + campaignId;
         window.__landerDomainRouting = window.__landerDomainRouting || domainRouting || {};
 
@@ -357,13 +359,55 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
           var targetVariant = currentVariant;
           if (config.variants.length > 0) {
-            var stored = localStorage.getItem('lander-variant-' + cId);
-            if (stored !== null && config.variants.indexOf(stored) !== -1) {
-              targetVariant = stored;
-            } else if (!currentVariant) {
+            var alloc = config.allocation || {};
+            var sticky = alloc.sticky !== false;
+            var storageKey = 'lander_variant_' + cId;
+            var stored = null;
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var forceVariant = urlParams.get('variant');
+
+            if (forceVariant && config.variants.indexOf(forceVariant) !== -1) {
+              targetVariant = forceVariant;
+              if (sticky) {
+                sessionStorage.setItem(storageKey, targetVariant);
+                document.cookie = storageKey + '=' + targetVariant + '; path=/; max-age=2592000';
+              }
+            } else {
+              if (sticky) {
+                stored = sessionStorage.getItem(storageKey);
+                if (!stored) {
+                  var match = document.cookie.match(new RegExp('(^| )' + storageKey + '=([^;]+)'));
+                  if (match) stored = match[2];
+                }
+              }
+
+              if (stored && config.variants.indexOf(stored) !== -1) {
+                targetVariant = stored;
+              } else if (!currentVariant) {
               targetVariant = config.variants[Math.floor(Math.random() * config.variants.length)];
-              localStorage.setItem('lander-variant-' + cId, targetVariant);
+
+              if (alloc.strategy === 'weighted' && alloc.trafficSplit) {
+                var validVariants = config.variants.filter(function(v) { return alloc.trafficSplit[v] !== undefined; });
+                if (validVariants.length > 0) {
+                  var totalWeight = validVariants.reduce(function(sum, v) { return sum + alloc.trafficSplit[v]; }, 0);
+                  var random = Math.random() * totalWeight;
+                  for (var j = 0; j < validVariants.length; j++) {
+                    random -= alloc.trafficSplit[validVariants[j]];
+                    if (random <= 0) {
+                      targetVariant = validVariants[j];
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (sticky && targetVariant) {
+                sessionStorage.setItem(storageKey, targetVariant);
+                document.cookie = storageKey + '=' + targetVariant + '; path=/; max-age=2592000';
+              }
             }
+          }
           }
 
           var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -454,7 +498,18 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
       });
     </script>
 
-    <script is:inline define:vars={{ initialState }}>
+    <script>
+      import { assignVariant } from 'lander-engine/core';
+
+      // Attach variant event to window hydration script
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceVariant = urlParams.get('variant');
+      // For hydration we just need to know it was assigned, wait! If there is a variant
+      // in Astro.props, it should be passed. Since we cannot directly use Astro props in
+      // a module script without define:vars, we can read it from a global variable or define it in inline script first.
+    </script>
+
+    <script is:inline define:vars={{ initialState, variant }}>
       document.addEventListener('click', function (e) {
         var modal = e.target.closest('.lander-modal');
         if (modal && e.target === modal) {
@@ -463,6 +518,17 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
           }
         }
       });
+      if (variant) {
+        // We will just expose it on window so the module script can pick it up.
+        window.__landerAssignedVariant = variant;
+      }
+    </script>
+
+    <script>
+      import { assignVariant } from 'lander-engine/core';
+      if ((window as any).__landerAssignedVariant) {
+        assignVariant((window as any).__landerAssignedVariant);
+      }
     </script>
   </body>
 </html>

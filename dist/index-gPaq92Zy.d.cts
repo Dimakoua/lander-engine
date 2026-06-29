@@ -73,6 +73,11 @@ interface ModalConfig {
     animation?: 'fade' | 'scale' | 'slide' | 'none';
     animationDuration?: number;
 }
+interface VariantAllocationConfig {
+    trafficSplit?: Record<string, number>;
+    strategy?: 'weighted' | 'bandit';
+    sticky?: boolean;
+}
 interface FlowConfig {
     initialStep: string;
     steps: Record<string, {
@@ -80,6 +85,7 @@ interface FlowConfig {
         next?: string;
     }>;
     modals?: Record<string, ModalConfig>;
+    variants?: VariantAllocationConfig;
 }
 interface StepSection {
     component: string;
@@ -129,4 +135,4 @@ declare class ConfigParser {
     loadOverrides(campaignId: string, subPath: string): Promise<Partial<CampaignConfig>>;
 }
 
-export { type CampaignConfig as C, type DeepPartial as D, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, interpolateVariables as i, resolveCascadingConfig as r };
+export { type CampaignConfig as C, type DeepPartial as D, type FlowConfig as F, type LayoutConfig as L, type ModalConfig as M, type SEOConfig as S, type ThemeConfig as T, type VariantAllocationConfig as V, ConfigParser as a, type StepConfig as b, type StepSection as c, deepMerge as d, interpolateVariables as i, resolveCascadingConfig as r };

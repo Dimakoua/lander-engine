@@ -125,7 +125,7 @@ describe('ActionDispatcher', () => {
         hasMobileRoute: true,
       }
     };
-    (localStorage.getItem as any).mockReturnValue('v1');
+    (window.sessionStorage.getItem as any).mockReturnValue('v1');
     (navigator as any).userAgent = 'iPhone';
 
     // Mock resolveInternalUrl indirectly through navigation action
