@@ -20,11 +20,11 @@ function getContentPaths() {
     }
   }
 
-  // Default content paths - from the generated workspace context
+  // Default content paths - from the generated workspace context (node_modules/.lander-engine)
   // These paths work both in dev and build where the workspace is generated
   return [
     './src/**/*.{astro,jsx,tsx}',
-    '../components/**/*.{astro,jsx,tsx}',
+    '../../components/**/*.{astro,jsx,tsx}',
     './**/*.astro',
   ];
 }

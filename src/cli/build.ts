@@ -8,7 +8,7 @@ export class Builder {
 
   constructor(config: LanderConfig) {
     this.config = config;
-    this.workspaceDir = path.resolve(config.projectRoot, '.lander-engine');
+    this.workspaceDir = path.resolve(config.projectRoot, 'node_modules/.lander-engine');
   }
 
   /**
@@ -23,6 +23,14 @@ export class Builder {
         ? path.resolve(this.config.projectRoot, this.config.jsonConfigsDir)
         : path.resolve(this.config.projectRoot, 'json_configs');
 
+      const outputDir = this.config.outputDir
+        ? path.resolve(this.config.projectRoot, this.config.outputDir)
+        : path.resolve(this.config.projectRoot, 'dist');
+
+      const componentsDir = this.config.componentsDir
+        ? path.resolve(this.config.projectRoot, this.config.componentsDir)
+        : path.resolve(this.config.projectRoot, 'components');
+
       const child = spawn(astroBin, [command], {
         cwd: this.workspaceDir,
         stdio: 'inherit',
@@ -30,6 +38,12 @@ export class Builder {
         env: {
           ...process.env,
           LANDER_JSON_CONFIGS_DIR: jsonConfigsDir,
+          LANDER_OUTPUT_DIR: outputDir,
+          LANDER_CONTENT_PATHS: JSON.stringify([
+            './src/**/*.{astro,jsx,tsx}',
+            path.join(componentsDir, '**/*.{astro,jsx,tsx}').replace(/\\/g, '/'),
+            './**/*.astro',
+          ]),
         },
       });
 
@@ -44,7 +58,9 @@ export class Builder {
   }
 
   async logPageSizes() {
-    const distDir = path.resolve(this.workspaceDir, 'dist');
+    const distDir = this.config.outputDir
+      ? path.resolve(this.config.projectRoot, this.config.outputDir)
+      : path.resolve(this.config.projectRoot, 'dist');
     const fs = await import('fs/promises');
     const pathLib = await import('path');
 
@@ -132,7 +148,9 @@ export class Builder {
    * Starts a preview server for the built project with compression support.
    */
   async preview(port: number = 4321) {
-    const distDir = path.resolve(this.workspaceDir, 'dist');
+    const distDir = this.config.outputDir
+      ? path.resolve(this.config.projectRoot, this.config.outputDir)
+      : path.resolve(this.config.projectRoot, 'dist');
     const fs = await import('fs');
 
     if (!fs.existsSync(distDir)) {
