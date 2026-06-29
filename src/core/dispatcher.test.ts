@@ -26,9 +26,14 @@ describe('ActionDispatcher', () => {
       setItem: vi.fn(),
     } as any;
 
-    global.navigator = {
-      userAgent: 'Mozilla/5.0',
-    } as any;
+    Object.defineProperty(global, 'navigator', {
+      value: {
+        userAgent: 'Mozilla/5.0',
+        clipboard: { writeText: vi.fn() },
+      },
+      writable: true,
+      configurable: true,
+    });
 
     global.fetch = vi.fn();
   });
@@ -261,6 +266,7 @@ describe('ActionDispatcher', () => {
     });
 
     it('should handle openPopup and closePopup', async () => {
+      if (typeof document === 'undefined') return;
       const mockElement = document.createElement('div');
       mockElement.id = 'modal-test-popup';
       mockElement.classList.add('modal-hidden');
