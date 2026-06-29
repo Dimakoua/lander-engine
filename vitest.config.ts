@@ -4,7 +4,7 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'node', // Default to node environment
-    environmentMatchglobs: [
+    environmentMatchGlobs: [
       ['src/core/**/*.test.ts', 'jsdom'],
     ],
     globals: true, // Allow globals like describe, it, expect
