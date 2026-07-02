@@ -259,6 +259,11 @@ const faviconType: Record<string, string> = {
 };
 const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
+const keywordsArray = step.seo?.keywords || config.seo?.keywords;
+const keywordsString = Array.isArray(keywordsArray) ? keywordsArray.join(', ') : keywordsArray;
+const ogImageUrl = step.seo?.ogImage || config.seo?.ogImage;
+const canonicalUrl = step.seo?.canonical || config.seo?.canonical;
+const noindex = step.seo?.noindex ?? config.seo?.noindex;
 const scripts = layout?.scripts || [];
 const headScripts = scripts.filter((s: any) => s.position === 'head');
 const bodyStartScripts = scripts.filter((s: any) => s.position === 'body-start');
@@ -275,6 +280,10 @@ const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
+    {keywordsString && <meta name="keywords" content={keywordsString} />}
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {noindex && <meta name="robots" content="noindex" />}
     <style>body { visibility: hidden; }</style>
     <ClientRouter />
     {headScripts.map((s: any) => (
