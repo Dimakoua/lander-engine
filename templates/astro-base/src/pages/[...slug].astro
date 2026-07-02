@@ -264,6 +264,10 @@ const keywordsString = Array.isArray(keywordsArray) ? keywordsArray.join(', ') :
 const ogImageUrl = step.seo?.ogImage || config.seo?.ogImage;
 const canonicalUrl = step.seo?.canonical || config.seo?.canonical;
 const noindex = step.seo?.noindex ?? config.seo?.noindex;
+const scripts = layout?.scripts || [];
+const headScripts = scripts.filter((s: any) => s.position === 'head');
+const bodyStartScripts = scripts.filter((s: any) => s.position === 'body-start');
+const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
 ---
 
 <html lang="en">
@@ -282,8 +286,14 @@ const noindex = step.seo?.noindex ?? config.seo?.noindex;
     {noindex && <meta name="robots" content="noindex" />}
     <style>body { visibility: hidden; }</style>
     <ClientRouter />
+    {headScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
   </head>
   <body style={themeVars}>
+    {bodyStartScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
     <img src={logo.src} alt="Logo" class="hidden lander-engine-logo" />
     {layout?.header && (
       <header id="lander-header">
@@ -497,5 +507,8 @@ const noindex = step.seo?.noindex ?? config.seo?.noindex;
         }
       });
     </script>
+    {bodyEndScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
   </body>
 </html>
