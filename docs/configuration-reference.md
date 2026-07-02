@@ -113,6 +113,86 @@ Use these in your components and Tailwind classes:
 <button style={{ borderRadius: 'var(--token-buttonRadius)' }}>Click</button>
 ```
 
+#### Custom & Local Asset Fonts
+
+##### 1. Setting up More Than 2 Fonts
+You can define any number of keys in the `fonts` object—you are not limited to just `body` and `heading`. Each key dynamically generates a `--font-<key>` CSS custom property.
+
+```json
+  "fonts": {
+    "body": "Inter, sans-serif",
+    "heading": "Roboto, sans-serif",
+    "accent": "Playfair Display, serif",
+    "code": "Fira Code, monospace"
+  },
+  "fontSources": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap",
+    "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap"
+  ]
+```
+
+##### 2. Using Local Fonts from the `assets/` Folder
+If you have local font files (e.g., `.woff2`), place them inside your configured assets folder (default is `assets/` at the project root). The build process copies this folder directly to the static output root:
+
+1. Put font files in `assets/fonts/MyCustomFont.woff2`.
+2. Create `assets/css/local-fonts.css` and declare the `@font-face`:
+   ```css
+   @font-face {
+     font-family: 'MyCustomFont';
+     src: url('/fonts/MyCustomFont.woff2') format('woff2');
+     font-weight: 400;
+     font-style: normal;
+     font-display: swap;
+   }
+   ```
+3. Load the local stylesheet and register the font key in your `theme.json`:
+   ```json
+   {
+     "fonts": {
+       "body": "Inter, sans-serif",
+       "heading": "Roboto, sans-serif",
+       "custom": "MyCustomFont, sans-serif"
+     },
+     "fontSources": [
+       "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+       "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap",
+       "/css/local-fonts.css"
+     ]
+   }
+   ```
+
+##### 3. Using the Fonts in Components
+You can reference the generated CSS variable `--font-<key>` in style attributes or Tailwind arbitrary values:
+
+* **CSS / Inline Styles**:
+  ```tsx
+  <div style={{ fontFamily: 'var(--font-custom)' }}>Hello local font!</div>
+  ```
+* **Tailwind CSS (Arbitrary Values)**:
+  ```tsx
+  <div className="font-[family-name:var(--font-custom)]">Hello local font!</div>
+  ```
+* **Tailwind CSS Config Integration**:
+  If you are configuring a custom `tailwind.config.js` for your campaign templates, extend the `fontFamily` setting:
+  ```javascript
+  module.exports = {
+    theme: {
+      extend: {
+        fontFamily: {
+          custom: ['var(--font-custom)', 'sans-serif'],
+        },
+      },
+    },
+  };
+  ```
+  Then use the Tailwind utility class directly:
+  ```tsx
+  <div className="font-custom">Hello local font!</div>
+  ```
+
+
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `colors` | `Record<string, string>` | Yes | Color palette |
