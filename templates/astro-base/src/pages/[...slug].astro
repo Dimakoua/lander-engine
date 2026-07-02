@@ -258,6 +258,11 @@ const faviconType: Record<string, string> = {
   webp: 'image/webp',
 };
 const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
+
+const scripts = layout?.scripts || [];
+const headScripts = scripts.filter((s: any) => s.position === 'head');
+const bodyStartScripts = scripts.filter((s: any) => s.position === 'body-start');
+const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
 ---
 
 <html lang="en">
@@ -272,8 +277,14 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     <meta name="description" content={step.seo?.description || config.seo.description} />
     <style>body { visibility: hidden; }</style>
     <ClientRouter />
+    {headScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
   </head>
   <body style={themeVars}>
+    {bodyStartScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
     <img src={logo.src} alt="Logo" class="hidden lander-engine-logo" />
     {layout?.header && (
       <header id="lander-header">
@@ -487,5 +498,8 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
         }
       });
     </script>
+    {bodyEndScripts.map((s: any) => (
+      <script src={s.src} async={s.async} defer={s.defer}></script>
+    ))}
   </body>
 </html>
