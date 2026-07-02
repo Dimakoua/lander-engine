@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Record<string,ModalConfig>": {
+            "type": "object"
+        },
+        "Record<string,{type:\"normal\"|\"popup\";next?:string|undefined;}>": {
+            "type": "object"
+        }
+    },
+    "properties": {
+        "initialStep": {
+            "type": "string"
+        },
+        "modals": {
+            "$ref": "#/definitions/Record%3Cstring%2CModalConfig%3E"
+        },
+        "steps": {
+            "$ref": "#/definitions/Record%3Cstring%2C%7Btype%3A%22normal%22%7C%22popup%22%3Bnext%3F%3Astring%7Cundefined%3B%7D%3E"
+        }
+    },
+    "required": [
+        "initialStep",
+        "steps"
+    ],
+    "type": "object"
+}

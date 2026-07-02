@@ -1,0 +1,135 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Record<string,any>": {
+            "type": "object"
+        },
+        "Record<string,string>": {
+            "type": "object"
+        },
+        "Record<string,{component:string;props?:Record<string,any>|undefined;}>": {
+            "type": "object"
+        },
+        "TelemetryConfig": {
+            "properties": {
+                "ga4": {
+                    "properties": {
+                        "measurementId": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "measurementId"
+                    ],
+                    "type": "object"
+                },
+                "metaPixel": {
+                    "properties": {
+                        "pixelId": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "pixelId"
+                    ],
+                    "type": "object"
+                },
+                "posthog": {
+                    "properties": {
+                        "apiHost": {
+                            "type": "string"
+                        },
+                        "apiKey": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "apiKey"
+                    ],
+                    "type": "object"
+                },
+                "webhook": {
+                    "properties": {
+                        "endpoint": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "$ref": "#/definitions/Record%3Cstring%2Cstring%3E"
+                        }
+                    },
+                    "required": [
+                        "endpoint"
+                    ],
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "properties": {
+        "errorPages": {
+            "$ref": "#/definitions/Record%3Cstring%2C%7Bcomponent%3Astring%3Bprops%3F%3ARecord%3Cstring%2Cany%3E%7Cundefined%3B%7D%3E"
+        },
+        "footer": {
+            "properties": {
+                "component": {
+                    "type": "string"
+                },
+                "props": {
+                    "$ref": "#/definitions/Record%3Cstring%2Cany%3E"
+                }
+            },
+            "required": [
+                "component"
+            ],
+            "type": "object"
+        },
+        "header": {
+            "properties": {
+                "component": {
+                    "type": "string"
+                },
+                "props": {
+                    "$ref": "#/definitions/Record%3Cstring%2Cany%3E"
+                }
+            },
+            "required": [
+                "component"
+            ],
+            "type": "object"
+        },
+        "scripts": {
+            "items": {
+                "properties": {
+                    "async": {
+                        "type": "boolean"
+                    },
+                    "defer": {
+                        "type": "boolean"
+                    },
+                    "position": {
+                        "enum": [
+                            "body-end",
+                            "body-start",
+                            "head"
+                        ],
+                        "type": "string"
+                    },
+                    "src": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "position",
+                    "src"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "telemetry": {
+            "$ref": "#/definitions/TelemetryConfig"
+        }
+    },
+    "type": "object"
+}

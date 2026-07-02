@@ -60,7 +60,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepublishonly": "npm run build"
+    "prepublishonly": "npm run build",
+    "generate:schemas": "typescript-json-schema tsconfig.json FlowConfig --out schemas/flow.schema.json --required && typescript-json-schema tsconfig.json ThemeConfig --out schemas/theme.schema.json --required && typescript-json-schema tsconfig.json LayoutConfig --out schemas/layout.schema.json --required && typescript-json-schema tsconfig.json StepConfig --out schemas/step.schema.json --required"
   },
   "dependencies": {
     "astro": "^6.1.0",
@@ -78,6 +79,7 @@
     "jsdom": "^29.0.1",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
+    "typescript-json-schema": "^0.67.4",
     "vitest": "^4.1.2"
   }
 }
