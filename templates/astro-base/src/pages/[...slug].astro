@@ -258,6 +258,12 @@ const faviconType: Record<string, string> = {
   webp: 'image/webp',
 };
 const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
+
+const keywordsArray = step.seo?.keywords || config.seo?.keywords;
+const keywordsString = Array.isArray(keywordsArray) ? keywordsArray.join(', ') : keywordsArray;
+const ogImageUrl = step.seo?.ogImage || config.seo?.ogImage;
+const canonicalUrl = step.seo?.canonical || config.seo?.canonical;
+const noindex = step.seo?.noindex ?? config.seo?.noindex;
 ---
 
 <html lang="en">
@@ -270,6 +276,10 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
+    {keywordsString && <meta name="keywords" content={keywordsString} />}
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {noindex && <meta name="robots" content="noindex" />}
     <style>body { visibility: hidden; }</style>
     <ClientRouter />
   </head>
