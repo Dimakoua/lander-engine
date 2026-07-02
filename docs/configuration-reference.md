@@ -69,7 +69,20 @@ Defines design tokens that are injected into the page as CSS custom properties o
     "text":       "#0b0c10"
   },
   "fonts": {
-    "body": "Inter, sans-serif"
+    "body": "Inter, sans-serif",
+    "heading": "Roboto, sans-serif"
+  },
+  "fontSources": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+  ],
+  "spacing": {
+    "md": "16px",
+    "lg": "24px"
+  },
+  "borderRadius": {
+    "sm": "4px",
+    "md": "8px"
   },
   "tokens": {
     "buttonRadius": "12px",
@@ -86,6 +99,10 @@ Defines design tokens that are injected into the page as CSS custom properties o
 | `colors.primary` | `--color-primary` |
 | `colors.secondary` | `--color-secondary` |
 | `colors.background` | `--color-background` |
+| `fonts.body` | `--font-body` |
+| `fonts.heading` | `--font-heading` |
+| `spacing.md` | `--spacing-md` |
+| `borderRadius.md` | `--border-radius-md` |
 | `tokens.buttonRadius` | `--token-buttonRadius` |
 
 Use these in your components and Tailwind classes:
@@ -100,6 +117,7 @@ Use these in your components and Tailwind classes:
 |---|---|---|---|
 | `colors` | `Record<string, string>` | Yes | Color palette |
 | `fonts` | `Record<string, string>` | No | Font stack definitions |
+| `fontSources` | `string[]` | No | External font stylesheet URLs |
 | `spacing` | `Record<string, string>` | No | Spacing scale |
 | `borderRadius` | `Record<string, string>` | No | Border-radius scale |
 | `tokens` | `Record<string, any>` | No | Arbitrary named design tokens |

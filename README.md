@@ -24,6 +24,39 @@
 
 ---
 
+## Theming and Custom Fonts
+
+Lander Engine supports rich custom theming by mapping JSON configurations directly to CSS custom properties. This allows you to effortlessly integrate custom typography and design tokens into your campaign.
+
+You can specify a CSS font stack via `fonts`, link external stylesheets via `fontSources`, and define arbitrary variables using `tokens` in your `theme.json`:
+
+```json
+{
+  "colors": {
+    "primary": "#3b82f6"
+  },
+  "fonts": {
+    "body": "Inter, sans-serif"
+  },
+  "fontSources": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+  ],
+  "spacing": {
+    "md": "16px"
+  },
+  "borderRadius": {
+    "md": "8px"
+  },
+  "tokens": {
+    "buttonRadius": "12px"
+  }
+}
+```
+
+When built, these maps to variables like `--font-body`, `--spacing-md`, `--border-radius-md`, and `--token-buttonRadius`, making them instantly usable in your Tailwind config or inline styles.
+
+---
+
 ## Quick Start
 
 ```bash

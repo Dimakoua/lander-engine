@@ -221,11 +221,31 @@ for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
   }
 }
 
-// Map theme colors to CSS custom properties
-const themeVars = Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
-  acc[`--color-${key}`] = val;
-  return acc;
-}, {} as Record<string, string>);
+// Map theme variables to CSS custom properties
+const themeVars = {
+  ...Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
+    acc[`--color-${key}`] = val;
+    return acc;
+  }, {} as Record<string, string>),
+  ...Object.entries(config.theme.fonts || {}).reduce((acc, [key, val]) => {
+    acc[`--font-${key}`] = val;
+    return acc;
+  }, {} as Record<string, string>),
+  ...Object.entries(config.theme.spacing || {}).reduce((acc, [key, val]) => {
+    acc[`--spacing-${key}`] = val;
+    return acc;
+  }, {} as Record<string, string>),
+  ...Object.entries(config.theme.borderRadius || {}).reduce((acc, [key, val]) => {
+    acc[`--border-radius-${key}`] = val;
+    return acc;
+  }, {} as Record<string, string>),
+  ...Object.entries(config.theme.tokens || {}).reduce((acc, [key, val]) => {
+    acc[`--token-${key}`] = val;
+    return acc;
+  }, {} as Record<string, string>),
+};
+
+const fontSources = config.theme.fontSources || [];
 
 const faviconHref = config.theme.favicon || '/favicon.svg';
 const faviconExt = faviconHref.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
@@ -244,6 +264,9 @@ const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type={faviconMime} href={faviconHref} />
+    {fontSources.map((source: string) => (
+      <link rel="stylesheet" href={source} />
+    ))}
     <meta name="viewport" content="width=device-width" />
     <title>{step.seo?.title || config.seo.title}</title>
     <meta name="description" content={step.seo?.description || config.seo.description} />
