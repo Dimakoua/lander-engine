@@ -1,5 +1,15 @@
 # Configuration Reference
 
+**Note:** For a better Developer Experience (DX), you can reference JSON schemas in your campaign configuration files. This enables IDEs like VS Code to offer auto-completion, hover tooltips, and real-time validation.
+
+Add a `$schema` property to your JSON files, pointing to the corresponding schema in the `schemas/` directory of the engine. The exact path depends on where your configuration file is located relative to the engine installation.
+
+* Example for `theme.json`: `"$schema": "../../schemas/theme.schema.json"`
+* Example for `flow.json`: `"$schema": "../../schemas/flow.schema.json"`
+* Example for `layout.json`: `"$schema": "../../schemas/layout.schema.json"`
+* Example for `steps/*.json`: `"$schema": "../../../schemas/step.schema.json"`
+
+---
 
 ### `flow.json`
 
