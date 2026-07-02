@@ -1,6 +1,7 @@
 export interface ThemeConfig {
   colors: Record<string, string>;
   fonts?: Record<string, string>;
+  fontSources?: string[];
   spacing?: Record<string, string>;
   borderRadius?: Record<string, string>;
   tokens?: Record<string, any>;

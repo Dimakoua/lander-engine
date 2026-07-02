@@ -1,4 +1,4 @@
-import { T as TelemetryConfig } from './telemetry-DA2Y4suJ.js';
+import { T as TelemetryConfig } from './telemetry-DA2Y4suJ.cjs';
 
 /**
  * Recursive partial type (deeply optional) for merge overrides.
@@ -20,6 +20,7 @@ declare function resolveCascadingConfig<T extends Record<string, any>>(base: T, 
 interface ThemeConfig {
     colors: Record<string, string>;
     fonts?: Record<string, string>;
+    fontSources?: string[];
     spacing?: Record<string, string>;
     borderRadius?: Record<string, string>;
     tokens?: Record<string, any>;
