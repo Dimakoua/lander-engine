@@ -7,6 +7,7 @@ import '../registry-manifest';
 import Registry from '../Registry.astro';
 import ModalsContainer from '../ModalsContainer.astro';
 import logo from '@assets/logo.svg';
+import landerConfig from '../lander-config.json';
 
 export async function getStaticPaths() {
   const nodeEnvJsonDir = process.env.LANDER_JSON_CONFIGS_DIR;
@@ -119,11 +120,19 @@ export async function getStaticPaths() {
       // Campaign root → server-redirect to initial step (variant assignment happens client-side)
       const initialStepId = base.flow.initialStep;
       if (base.steps[initialStepId]) {
+        const defaultProps = buildProps(initialStepId, false, null, hasMobile, bp);
         paths.push({
           params: { slug: prefix === '' ? undefined : prefix },
           props: {
             isRedirect: true,
             redirectTo: bp === '/' ? `/${initialStepId}` : `${bp}/${initialStepId}`,
+            campaignId,
+            config: defaultProps.config,
+            flow: defaultProps.flow,
+            variants: defaultProps.variants,
+            hasMobileRoute: defaultProps.hasMobileRoute,
+            basePath: bp,
+            domainRouting,
           },
         });
       }
@@ -181,37 +190,27 @@ export async function getStaticPaths() {
 }
 
 const {
-  isRedirect,
-  redirectTo,
-  isMobile,
-  variant,
-  variants,
-  hasMobileRoute,
-  config,
-  step,
-  campaignId,
-  stepId,
-  flow,
-  allSteps,
-  modalConfigs,
-  layout,
-  basePath,
-  domainRouting,
-} = Astro.props;
+  isRedirect = false,
+  redirectTo = '',
+  isMobile = false,
+  variant = null,
+  variants = [],
+  hasMobileRoute = false,
+  config = { theme: {}, seo: {} },
+  step = { sections: [], seo: {}, state: {} },
+  campaignId = '',
+  stepId = '',
+  flow = { steps: {} },
+  allSteps = {},
+  modalConfigs = {},
+  layout = {},
+  basePath = '',
+  domainRouting = {},
+} = Astro.props as any;
 
-// Campaign root redirect: /{campaignId} → /{campaignId}/{initialStep} or / → /{initialStep}
-if (isRedirect && redirectTo) {
-  return Astro.redirect(redirectTo, 302);
-}
-
-const initialState = {
-  ...config.state,
-  ...step.state,
-  isMobile,
-  variant,
-  campaignId,
-  stepId,
-};
+const redirectPageConfig = (landerConfig as any).redirectPage || {};
+const redirectTheme = redirectPageConfig.theme || {};
+const redirectComponent = redirectPageConfig.component;
 
 // Collect popup steps for ModalsContainer
 const availablePopups: Record<string, any> = {};
@@ -223,31 +222,30 @@ for (const [popupId, popupStepConfig] of Object.entries(allSteps)) {
 
 // Map theme variables to CSS custom properties
 const themeVars = {
-  ...Object.entries(config.theme.colors || {}).reduce((acc, [key, val]) => {
-    acc[`--color-${key}`] = val;
+  ...Object.entries((config.theme && config.theme.colors) || {}).reduce((acc, [key, val]) => {
+    acc[`--color-${key}`] = val as string;
     return acc;
   }, {} as Record<string, string>),
-  ...Object.entries(config.theme.fonts || {}).reduce((acc, [key, val]) => {
-    acc[`--font-${key}`] = val;
+  ...Object.entries((config.theme && config.theme.fonts) || {}).reduce((acc, [key, val]) => {
+    acc[`--font-${key}`] = val as string;
     return acc;
   }, {} as Record<string, string>),
-  ...Object.entries(config.theme.spacing || {}).reduce((acc, [key, val]) => {
-    acc[`--spacing-${key}`] = val;
+  ...Object.entries((config.theme && config.theme.spacing) || {}).reduce((acc, [key, val]) => {
+    acc[`--spacing-${key}`] = val as string;
     return acc;
   }, {} as Record<string, string>),
-  ...Object.entries(config.theme.borderRadius || {}).reduce((acc, [key, val]) => {
-    acc[`--border-radius-${key}`] = val;
+  ...Object.entries((config.theme && config.theme.borderRadius) || {}).reduce((acc, [key, val]) => {
+    acc[`--border-radius-${key}`] = val as string;
     return acc;
   }, {} as Record<string, string>),
-  ...Object.entries(config.theme.tokens || {}).reduce((acc, [key, val]) => {
-    acc[`--token-${key}`] = val;
+  ...Object.entries((config.theme && config.theme.tokens) || {}).reduce((acc, [key, val]) => {
+    acc[`--token-${key}`] = val as string;
     return acc;
   }, {} as Record<string, string>),
 };
 
-const fontSources = config.theme.fontSources || [];
-
-const faviconHref = config.theme.favicon || '/favicon.svg';
+const fontSources = (config.theme && config.theme.fontSources) || [];
+const faviconHref = (config.theme && config.theme.favicon) || '/favicon.svg';
 const faviconExt = faviconHref.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
 const faviconType: Record<string, string> = {
   svg:  'image/svg+xml',
@@ -259,255 +257,258 @@ const faviconType: Record<string, string> = {
 };
 const faviconMime = faviconType[faviconExt] ?? 'image/x-icon';
 
-const keywordsArray = step.seo?.keywords || config.seo?.keywords;
+const keywordsArray = (step.seo && step.seo.keywords) || (config.seo && config.seo.keywords);
 const keywordsString = Array.isArray(keywordsArray) ? keywordsArray.join(', ') : keywordsArray;
-const ogImageUrl = step.seo?.ogImage || config.seo?.ogImage;
-const canonicalUrl = step.seo?.canonical || config.seo?.canonical;
-const noindex = step.seo?.noindex ?? config.seo?.noindex;
+const ogImageUrl = (step.seo && step.seo.ogImage) || (config.seo && config.seo.ogImage);
+const canonicalUrl = (step.seo && step.seo.canonical) || (config.seo && config.seo.canonical);
+const noindex = (step.seo && step.seo.noindex) ?? (config.seo && config.seo.noindex);
 const scripts = layout?.scripts || [];
 const headScripts = scripts.filter((s: any) => s.position === 'head');
 const bodyStartScripts = scripts.filter((s: any) => s.position === 'body-start');
 const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
 ---
-
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type={faviconMime} href={faviconHref} />
-    {fontSources.map((source: string) => (
-      <link rel="stylesheet" href={source} />
-    ))}
     <meta name="viewport" content="width=device-width" />
-    <title>{step.seo?.title || config.seo.title}</title>
-    <meta name="description" content={step.seo?.description || config.seo.description} />
-    {keywordsString && <meta name="keywords" content={keywordsString} />}
-    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
-    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    {noindex && <meta name="robots" content="noindex" />}
-    <style>body { visibility: hidden; }</style>
-    <ClientRouter />
-    {headScripts.map((s: any) => (
-      <script src={s.src} async={s.async} defer={s.defer}></script>
-    ))}
+    {isRedirect ? (
+      <>
+        <title>{redirectTheme.title || "Redirecting..."}</title>
+        <meta http-equiv="refresh" content={`0;url=${redirectTo}`} />
+        <style define:vars={{ 
+          bg: redirectTheme.backgroundColor || config.theme?.colors?.background || '#0f172a',
+          spinner: redirectTheme.spinnerColor || config.theme?.colors?.primary || '#3b82f6',
+          text: redirectTheme.textColor || config.theme?.colors?.text || '#f8fafc'
+        }}>
+          .redirect-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg);
+            font-family: system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            margin: 0;
+          }
+          .redirect-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: fadeIn 0.6s ease-out;
+          }
+          .spinner {
+            width: 3.5rem;
+            height: 3.5rem;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--spinner);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          .redirect-text {
+            font-size: 1.125rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            margin: 0;
+            opacity: 0.9;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        </style>
+      </>
+    ) : (
+      <>
+        <link rel="icon" type={faviconMime} href={faviconHref} />
+        {fontSources.map((source: string) => (
+          <link rel="stylesheet" href={source} />
+        ))}
+        <title>{step.seo?.title || config.seo?.title}</title>
+        <meta name="description" content={step.seo?.description || config.seo?.description} />
+        {keywordsString && <meta name="keywords" content={keywordsString} />}
+        {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+        {noindex && <meta name="robots" content="noindex" />}
+        <style>body { visibility: hidden; }</style>
+        <ClientRouter />
+        {headScripts.map((s: any) => (
+          <script src={s.src} async={s.async} defer={s.defer}></script>
+        ))}
+      </>
+    )}
   </head>
-  <body style={themeVars}>
-    {bodyStartScripts.map((s: any) => (
-      <script src={s.src} async={s.async} defer={s.defer}></script>
-    ))}
-    <img src={logo.src} alt="Logo" class="hidden lander-engine-logo" />
-    {layout?.header && (
-      <header id="lander-header">
-        <Registry component={layout.header.component} props={layout.header.props} />
-      </header>
+  <body style={isRedirect ? undefined : themeVars}>
+    {isRedirect ? (
+      redirectComponent ? (
+        <Registry component={redirectComponent} props={{ redirectTo, ...redirectPageConfig.props }} />
+      ) : (
+        <div class="redirect-container">
+          <div class="redirect-card">
+            <div class="spinner"></div>
+            <p class="redirect-text">{redirectTheme.loadingText || "Redirecting..."}</p>
+          </div>
+        </div>
+      )
+    ) : (
+      <>
+        {bodyStartScripts.map((s: any) => (
+          <script src={s.src} async={s.async} defer={s.defer}></script>
+        ))}
+        <img src={logo.src} alt="Logo" class="hidden lander-engine-logo" />
+        {layout?.header && (
+          <header id="lander-header">
+            <Registry component={layout.header.component} props={layout.header.props} />
+          </header>
+        )}
+
+        <main id="lander-engine-root">
+          {step.sections.map((section: any) => (
+            <Registry component={section.component} props={section.props} />
+          ))}
+        </main>
+
+        {layout?.footer && (
+          <footer id="lander-footer">
+            <Registry component={layout.footer.component} props={layout.footer.props} />
+          </footer>
+        )}
+
+        <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
+      </>
     )}
 
-    <main id="lander-engine-root">
-      {step.sections.map((section: any) => (
-        <Registry component={section.component} props={section.props} />
-      ))}
-    </main>
-
-    {layout?.footer && (
-      <footer id="lander-footer">
-        <Registry component={layout.footer.component} props={layout.footer.props} />
-      </footer>
-    )}
-
-    <ModalsContainer popups={availablePopups} modalConfigs={modalConfigs} />
-
-    <script>
-      import '../registry-manifest';
-    </script>
-
-    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId, basePath, domainRouting }}>
+    <script is:inline define:vars={{ variants, hasMobileRoute, campaignId, basePath, domainRouting, isRedirect, redirectTo }}>
       (function () {
+        if (isRedirect) {
+          if (!window.location.search.includes('no-redirect')) {
+            window.location.replace(redirectTo + window.location.search);
+          }
+          return;
+        }
+
         // Register config globally
         window.__landerCampaignConfigs = window.__landerCampaignConfigs || {};
         window.__landerCampaignConfigs[campaignId] = { variants: variants, hasMobileRoute: hasMobileRoute };
         window.__landerBasePath = window.__landerBasePath || basePath || '/' + campaignId;
         window.__landerDomainRouting = window.__landerDomainRouting || domainRouting || {};
-
-        // Execute domain level redirect if the current host is mapped to a different route
-        var host = window.location.hostname;
-        var hostMapping = window.__landerDomainRouting[host];
-        if (hostMapping) {
-          var expectedBase = hostMapping.basePath || '/' + hostMapping.campaign;
-          if (expectedBase === '/') expectedBase = '';
-
-          // If the page was loaded with a different prefix than the domain's expected base path, redirect
-          if (expectedBase !== '' && !window.location.pathname.startsWith(expectedBase + '/')) {
-             if (window.location.pathname === expectedBase) {
-                 // valid root for the campaign
-             } else {
-                 var target = expectedBase + '/' + (hostMapping.defaultStep || 'main');
-                 window.location.replace(target + window.location.search);
-                 return;
-             }
-          }
-        }
-
-        // Define the shared resolver function on the window
-        window.__landerResolveUrl = function(pathname) {
-          if (!pathname) return null;
-          
-          var parts = pathname.replace(/\/$/, '').split('/').filter(Boolean);
-          if (parts.length === 0) return null;
-
-          var cId;
-          var bpParts = 0;
-          if (window.__landerBasePath === '/') {
-              cId = campaignId;
-              bpParts = 0;
-          } else {
-              var bpSegments = window.__landerBasePath.replace(/^\//, '').split('/');
-              var match = true;
-              for (var i = 0; i < bpSegments.length; i++) {
-                 if (parts[i] !== bpSegments[i]) {
-                     match = false;
-                     break;
-                 }
-              }
-              if (match) {
-                 cId = campaignId;
-                 bpParts = bpSegments.length;
-              } else {
-                 // Fallback for multi-campaign setups without custom domain mapping matching this request
-                 cId = parts[0];
-                 bpParts = 1;
-              }
-          }
-
-          var config = window.__landerCampaignConfigs[cId];
-          if (!config) return null;
-
-          // Need at least one step segment
-          if (parts.length <= bpParts) return null;
-
-          var stepSlug = parts[parts.length - 1];
-          var slugNoMobile = stepSlug.endsWith('.mobile') ? stepSlug.slice(0, stepSlug.length - 7) : stepSlug;
-
-          var currentVariant = null;
-          var baseStepSlug = slugNoMobile;
-          
-          for (var i = 0; i < config.variants.length; i++) {
-            var v = config.variants[i];
-            if (slugNoMobile.endsWith('.' + v)) {
-              currentVariant = v;
-              baseStepSlug = slugNoMobile.slice(0, slugNoMobile.length - v.length - 1);
-              break;
-            }
-          }
-
-          var targetVariant = currentVariant;
-          if (config.variants.length > 0) {
-            var stored = localStorage.getItem('lander-variant-' + cId);
-            if (stored !== null && config.variants.indexOf(stored) !== -1) {
-              targetVariant = stored;
-            } else if (!currentVariant) {
-              targetVariant = config.variants[Math.floor(Math.random() * config.variants.length)];
-              localStorage.setItem('lander-variant-' + cId, targetVariant);
-            }
-          }
-
-          var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent || navigator.vendor || window.opera || ''
-          );
-          
-          var targetMobile = config.hasMobileRoute && isMobile;
-
-          var targetSlug = baseStepSlug;
-          if (targetVariant) targetSlug += '.' + targetVariant;
-          if (targetMobile)  targetSlug += '.mobile';
-
-          if (targetSlug === stepSlug) return null; // URL is already correct
-          
-          parts[parts.length - 1] = targetSlug;
-          return '/' + parts.join('/');
-        };
-
-        // Execute initial synchronous check
-        if (window.location.search.includes('no-redirect')) {
-          document.body.style.visibility = 'visible';
-          return;
-        }
-
-        // If the URL doesn't need resolving (returns null), it's already correct. Unhide immediately.
-        if (!window.__landerResolveUrl(window.location.pathname)) {
-          document.body.style.visibility = 'visible';
-        }
       })();
     </script>
 
     <script>
+      import { detectMobile, resolveUrl } from '../lib/routing';
+      import { assignVariant } from '../lib/variants';
+      import { performDomainRedirect, safeRedirect } from '../lib/redirect';
+      import { rewriteLinks, setupLinkInterception, setupModalBackdrop } from '../lib/dom';
       import { navigate } from 'astro:transitions/client';
 
-      // Expose Astro's navigate to the window for external actions
-      ;(window as any).__landerNavigate = navigate;
+      // Setup window globals
+      const container = document.querySelector('.redirect-container');
+      if (container) {
+        ;(window as any).__landerNavigate = () => {};
+      } else {
+        ;(window as any).__landerNavigate = navigate;
 
-      function rewriteLinks(): void {
-        if (location.search.includes('no-redirect')) return;
-        document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(a => {
-          try {
-            const url = new URL(a.href);
-            if (url.origin !== location.origin) return;
-            // Use the globally defined resolver
-            const corrected = (window as any).__landerResolveUrl(url.pathname);
-            if (corrected) a.href = corrected + url.search + url.hash;
-          } catch { /* non-parseable href */ }
-        });
-      }
+        // Populate resolved URL function using the library modules
+        window.__landerResolveUrl = (pathname: string): string | null => {
+          const pathParts = pathname.replace(/\/$/, '').split('/').filter(Boolean);
+          if (pathParts.length === 0) return null;
 
-      document.addEventListener('click', (e: MouseEvent) => {
-        if (location.search.includes('no-redirect')) return;
-        const a = (e.target as Element).closest('a');
-        if (!a) return;
-        
-        let url: URL;
-        try { url = new URL((a as HTMLAnchorElement).href); } catch { return; }
-        if (url.origin !== location.origin) return;
-        
-        const corrected = (window as any).__landerResolveUrl(url.pathname);
-        if (!corrected) return;
-        
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        navigate(corrected + url.search + url.hash);
-      }, { capture: true });
+          // Find current campaign id
+          let cId = '';
+          const currentBasePath = window.__landerBasePath || '';
+          if (currentBasePath === '/') {
+            // Find campaignId from window configuration
+            cId = Object.keys(window.__landerCampaignConfigs || {})[0] || '';
+          } else {
+            const bpSegments = currentBasePath.replace(/^\//, '').split('/');
+            let match = true;
+            for (let i = 0; i < bpSegments.length; i++) {
+              if (pathParts[i] !== bpSegments[i]) {
+                match = false;
+                break;
+              }
+            }
+            if (match && window.__landerCampaignConfigs) {
+              cId = Object.keys(window.__landerCampaignConfigs)[0] || '';
+            } else {
+              cId = pathParts[0] || '';
+            }
+          }
 
-      document.addEventListener('astro:after-swap', () => {
-        if (!(window as any).__landerResolveUrl(location.pathname)) {
-          document.body.style.visibility = 'visible';
-        }
-      });
+          const config = window.__landerCampaignConfigs ? window.__landerCampaignConfigs[cId] : undefined;
+          if (!config) return null;
 
-      document.addEventListener('astro:page-load', () => {
-        if (location.search.includes('no-redirect')) {
-          document.body.style.visibility = 'visible';
-          return;
-        }
-        
-        const corrected = (window as any).__landerResolveUrl(location.pathname);
-        if (corrected) {
-          navigate(corrected + location.search);
-          return;
-        }
-        
-        document.body.style.visibility = 'visible';
-        rewriteLinks();
-      });
-    </script>
+          // Sticky variant lookup or assignment
+          const activeVariant = assignVariant(cId, config.variants);
+          const isMobile = detectMobile();
 
-    <script is:inline define:vars={{ initialState }}>
-      document.addEventListener('click', function (e) {
-        var modal = e.target.closest('.lander-modal');
-        if (modal && e.target === modal) {
-          if (modal.dataset.closeOnBackdrop === 'true') {
-            modal.classList.add('modal-hidden');
+          return resolveUrl(pathname, cId, currentBasePath, config, isMobile, activeVariant);
+        };
+
+        // Perform initial domain redirect if needed
+        const hostname = window.location.hostname;
+        if (window.__landerDomainRouting) {
+          const redirectTarget = performDomainRedirect(hostname, window.location.pathname, window.location.search, window.__landerDomainRouting);
+          if (redirectTarget) {
+            safeRedirect(redirectTarget + window.location.search + window.location.hash, new URL(window.location.href));
           }
         }
-      });
+
+        // Perform redirect check (mobile/variants etc) synchronously on load
+        if (!window.location.search.includes('no-redirect')) {
+          const corrected = window.__landerResolveUrl(window.location.pathname);
+          if (corrected) {
+            safeRedirect(corrected + window.location.search + window.location.hash, new URL(window.location.href));
+          } else {
+            document.body.style.visibility = 'visible';
+          }
+        } else {
+          document.body.style.visibility = 'visible';
+        }
+
+        // Setup DOM event listeners & link rewriting
+        setupLinkInterception(window.__landerResolveUrl);
+        setupModalBackdrop();
+
+        document.addEventListener('astro:after-swap', () => {
+          if (window.__landerResolveUrl && !window.__landerResolveUrl(window.location.pathname)) {
+            document.body.style.visibility = 'visible';
+          }
+        });
+
+        document.addEventListener('astro:page-load', () => {
+          if (window.location.search.includes('no-redirect')) {
+            document.body.style.visibility = 'visible';
+            return;
+          }
+
+          if (window.__landerResolveUrl) {
+            const corrected = window.__landerResolveUrl(window.location.pathname);
+            if (corrected) {
+              navigate(corrected + window.location.search + window.location.hash);
+              return;
+            }
+          }
+
+          document.body.style.visibility = 'visible';
+          if (window.__landerResolveUrl) {
+            rewriteLinks(window.__landerResolveUrl);
+          }
+        });
+      }
     </script>
-    {bodyEndScripts.map((s: any) => (
+    {!isRedirect && bodyEndScripts.map((s: any) => (
       <script src={s.src} async={s.async} defer={s.defer}></script>
     ))}
   </body>

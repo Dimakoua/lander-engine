@@ -42,6 +42,17 @@ export interface LanderConfig {
     component: string;
     props?: Record<string, any>;
   }>;
+  redirectPage?: {
+    component?: string;
+    props?: Record<string, any>;
+    theme?: {
+      title?: string;
+      loadingText?: string;
+      backgroundColor?: string;
+      spinnerColor?: string;
+      textColor?: string;
+    };
+  };
 }
 
 export type UserLanderConfig = Partial<LanderConfig>;

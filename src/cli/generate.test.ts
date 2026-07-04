@@ -213,16 +213,23 @@ describe('WorkspaceGenerator', () => {
   });
 
   describe('generateConfigJson', () => {
-    it('should generate config json with error pages', async () => {
+    it('should generate config json with error pages and redirectPage', async () => {
       config.errorPages = {
         '404': { component: 'Custom404' }
+      };
+      config.redirectPage = {
+        component: 'CustomRedirect',
+        theme: { loadingText: 'Redirecting...' }
       };
       const generator = new WorkspaceGenerator(config);
       await (generator as any).generateConfigJson();
 
       expect(fs.writeJson).toHaveBeenCalledWith(
         path.join(workspaceDir, 'src/lander-config.json'),
-        { errorPages: config.errorPages },
+        { 
+          errorPages: config.errorPages,
+          redirectPage: config.redirectPage
+        },
         { spaces: 2 }
       );
     });

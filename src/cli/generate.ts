@@ -308,13 +308,10 @@ const { component, props } = Astro.props;
     console.log(`Domain routing configured for ${Object.keys(domainPaths).length} domain(s).`);
   }
 
-  /**
-   * Generates a config.json inside the workspace for templates to read global config.
-   */
   private async generateConfigJson() {
     const configPath = path.join(this.workspaceDir, 'src/lander-config.json');
-    const { errorPages } = this.config;
+    const { errorPages, redirectPage } = this.config;
     await fs.ensureDir(path.dirname(configPath));
-    await fs.writeJson(configPath, { errorPages: errorPages || {} }, { spaces: 2 });
+    await fs.writeJson(configPath, { errorPages: errorPages || {}, redirectPage: redirectPage || {} }, { spaces: 2 });
   }
 }
