@@ -27,6 +27,25 @@ export default defineConfig({
       alias: {
         '@assets': path.resolve(__dirname, './src/assets')
       }
-    }
+    },
+    plugins: [
+      {
+        name: 'watch-json-configs',
+        configureServer(server) {
+          const jsonConfigsDir = process.env.LANDER_JSON_CONFIGS_DIR;
+          if (jsonConfigsDir) {
+            server.watcher.add(jsonConfigsDir);
+            server.watcher.on('change', (file) => {
+              if (file.endsWith('.json')) {
+                server.ws.send({
+                  type: 'full-reload',
+                  path: '*'
+                });
+              }
+            });
+          }
+        }
+      }
+    ]
   }
 });
