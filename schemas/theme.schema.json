@@ -1,6 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
+        "Record<string,Record<string,string|number>>": {
+            "type": "object"
+        },
         "Record<string,any>": {
             "type": "object"
         },
@@ -30,6 +33,9 @@
         },
         "spacing": {
             "$ref": "#/definitions/Record%3Cstring%2Cstring%3E"
+        },
+        "styles": {
+            "$ref": "#/definitions/Record%3Cstring%2CRecord%3Cstring%2Cstring%7Cnumber%3E%3E"
         },
         "tokens": {
             "$ref": "#/definitions/Record%3Cstring%2Cany%3E"
