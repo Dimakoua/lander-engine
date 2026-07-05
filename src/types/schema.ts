@@ -5,6 +5,7 @@ export interface ThemeConfig {
   spacing?: Record<string, string>;
   borderRadius?: Record<string, string>;
   tokens?: Record<string, any>;
+  styles?: Record<string, Record<string, string | number>>;
   /**
    * URL of the campaign favicon. Supports absolute URLs and root-relative paths.
    * File extension is used to infer the MIME type automatically.

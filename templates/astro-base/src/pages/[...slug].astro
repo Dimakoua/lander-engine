@@ -231,6 +231,21 @@ const themeVars = {
   }, {} as Record<string, string>),
 };
 
+const customStyles = (config.theme && config.theme.styles);
+let generatedStyles = '';
+
+if (customStyles && Object.keys(customStyles).length > 0) {
+  for (const [selector, rules] of Object.entries(customStyles)) {
+    const cssRules = Object.entries(rules as Record<string, string | number>).map(([prop, val]) => {
+      const kebabProp = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+      return `${kebabProp}: ${val};`;
+    }).join(' ');
+    generatedStyles += `${selector} { ${cssRules} }\n`;
+  }
+} else {
+  generatedStyles = `body { background-color: var(--color-background, #ffffff); margin: 0; }\n`;
+}
+
 const fontSources = (config.theme && config.theme.fontSources) || [];
 const faviconHref = (config.theme && config.theme.favicon) || '/favicon.svg';
 const faviconExt = faviconHref.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
@@ -328,6 +343,7 @@ const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
         {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
         {noindex && <meta name="robots" content="noindex" />}
         <style>body { visibility: hidden; }</style>
+        {generatedStyles && <style is:global set:html={generatedStyles} />}
         <ClientRouter />
         {headScripts.map((s: any) => (
           <script src={s.src} async={s.async} defer={s.defer}></script>

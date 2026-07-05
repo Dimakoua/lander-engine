@@ -98,7 +98,16 @@ Defines design tokens that are injected into the page as CSS custom properties o
     "buttonRadius": "12px",
     "cardShadow":   "0 4px 24px rgba(0,0,0,0.08)"
   },
-  "favicon": "/assets/campaign-a-icon.svg"
+  "favicon": "/assets/campaign-a-icon.svg",
+  "styles": {
+    "body": {
+      "backgroundColor": "var(--color-background)",
+      "margin": 0
+    },
+    "h1, h2, h3": {
+      "color": "var(--color-text)"
+    }
+  }
 }
 ```
 
@@ -212,6 +221,7 @@ You can reference the generated CSS variable `--font-<key>` in style attributes 
 | `borderRadius` | `Record<string, string>` | No | Border-radius scale |
 | `tokens` | `Record<string, any>` | No | Arbitrary named design tokens |
 | `favicon` | `string` | No | Favicon URL (root-relative or absolute). Supported formats: `.svg`, `.ico`, `.png`, `.jpg`, `.webp`. Falls back to `/favicon.svg`. |
+| `styles` | `Record<string, Record<string, string \| number>>` | No | Custom global CSS resets and styles. Keys are selectors, values are CSS properties. If omitted, sensible default resets are injected (e.g. `margin: 0` on `body`). |
 
 ---
 
