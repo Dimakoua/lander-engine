@@ -5,7 +5,7 @@ import 'nanostores';
 
 type DomainRouteConfig = {
     campaign: string;
-    basePath?: string;
+    renderFromRoot?: boolean;
     defaultStep?: string;
 };
 /**

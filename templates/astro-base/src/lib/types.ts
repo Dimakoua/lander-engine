@@ -5,7 +5,7 @@ export interface CampaignConfig {
 
 export interface DomainRouteMapping {
   campaign: string;
-  basePath: string;
+  renderFromRoot?: boolean;
   defaultStep?: string;
 }
 

@@ -41,16 +41,14 @@ describe('WorkspaceGenerator', () => {
     it('should generate redirect routing artifacts (Netlify, Vercel, Astro)', async () => {
       config.routingConfig = {
         'example.com': 'campaign_a',
-        'promo.example.com': { campaign: 'campaign_b', basePath: '/promo' },
+        'promo.example.com': { campaign: 'campaign_b', renderFromRoot: true },
         'beta.example.com': { campaign: 'campaign_c', defaultStep: 'landing' },
-        'root.example.com': { campaign: 'campaign_d', basePath: '/' },
       };
 
       (fs.readJson as any).mockImplementation((p: string) => {
         if (p.includes('campaign_a')) return { initialStep: 'main' };
         if (p.includes('campaign_b')) return { initialStep: 'index' };
         if (p.includes('campaign_c')) return { initialStep: 'main' };
-        if (p.includes('campaign_d')) return { initialStep: 'root-step' };
         throw new Error('Not found');
       });
 
@@ -61,10 +59,9 @@ describe('WorkspaceGenerator', () => {
       expect(fs.writeJson).toHaveBeenCalledWith(
         path.join(workspaceDir, 'src/domain-routing.json'),
         {
-          'example.com': { campaign: 'campaign_a', basePath: '', defaultStep: undefined },
-          'promo.example.com': { campaign: 'campaign_b', basePath: '/promo', defaultStep: undefined },
-          'beta.example.com': { campaign: 'campaign_c', basePath: '', defaultStep: 'landing' },
-          'root.example.com': { campaign: 'campaign_d', basePath: '/', defaultStep: undefined },
+          'example.com': { campaign: 'campaign_a', renderFromRoot: false, defaultStep: undefined },
+          'promo.example.com': { campaign: 'campaign_b', renderFromRoot: true, defaultStep: undefined },
+          'beta.example.com': { campaign: 'campaign_c', renderFromRoot: false, defaultStep: 'landing' },
         },
         { spaces: 2 }
       );
@@ -76,18 +73,14 @@ describe('WorkspaceGenerator', () => {
       );
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(workspaceDir, 'public/_redirects'),
-        expect.stringContaining('/  /promo/index  302!  Host=promo.example.com')
+        expect.stringContaining('/  /campaign_b/index  200!  Host=promo.example.com')
       );
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(workspaceDir, 'public/_redirects'),
         expect.stringContaining('/  /campaign_c/landing  302!  Host=beta.example.com')
       );
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        path.join(workspaceDir, 'public/_redirects'),
-        expect.stringContaining('/  /root-step  302!  Host=root.example.com')
-      );
 
-      // Check vercel redirects
+      // Check vercel redirects/rewrites
       const vercelCall = (fs.writeFile as any).mock.calls.find((call: any[]) => call[0].endsWith('vercel.json'));
       expect(vercelCall).toBeDefined();
       const vercelJson = JSON.parse(vercelCall[1]);
@@ -98,9 +91,16 @@ describe('WorkspaceGenerator', () => {
           has: [{ type: 'host', value: 'example.com' }],
         })
       );
+      expect(vercelJson.rewrites).toContainEqual(
+        expect.objectContaining({
+          source: '/',
+          destination: '/campaign_b/index',
+          has: [{ type: 'host', value: 'promo.example.com' }],
+        })
+      );
     });
 
-    it('should generate index.astro redirector if no domain claims root path', async () => {
+    it('should generate index.astro redirector for domain routing', async () => {
       config.routingConfig = {
         'example.com': 'campaign_a',
       };
@@ -112,26 +112,13 @@ describe('WorkspaceGenerator', () => {
       const indexAstroCall = (fs.writeFile as any).mock.calls.find((call: any[]) => call[0].endsWith('src/pages/index.astro'));
       expect(indexAstroCall).toBeDefined();
       expect(indexAstroCall[1]).toContain('var domainMap = {');
-      expect(indexAstroCall[1]).toContain('"example.com": "/campaign_a/main"');
-    });
-
-    it('should not generate index.astro redirector if a domain claims root path', async () => {
-      config.routingConfig = {
-        'root.example.com': { campaign: 'campaign_d', basePath: '/' },
-      };
-      (fs.readJson as any).mockResolvedValue({ initialStep: 'main' });
-
-      const generator = new WorkspaceGenerator(config);
-      await (generator as any).generateDomainRouting();
-
-      const indexAstroCall = (fs.writeFile as any).mock.calls.find((call: any[]) => call[0].endsWith('src/pages/index.astro'));
-      expect(indexAstroCall).toBeUndefined();
+      expect(indexAstroCall[1]).toContain('"example.com": {');
     });
 
     it('should fallback gracefully if flow.json cannot be read', async () => {
       config.routingConfig = {
         'example.com': 'campaign_a',
-        'promo.example.com': { campaign: 'campaign_b', basePath: '/promo' },
+        'promo.example.com': { campaign: 'campaign_b', renderFromRoot: true },
       };
       (fs.readJson as any).mockRejectedValue(new Error('File not found'));
 
@@ -149,7 +136,7 @@ describe('WorkspaceGenerator', () => {
       );
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(workspaceDir, 'public/_redirects'),
-        expect.stringContaining('/  /promo  302!  Host=promo.example.com')
+        expect.stringContaining('/  /campaign_b  200!  Host=promo.example.com')
       );
 
       consoleWarnSpy.mockRestore();

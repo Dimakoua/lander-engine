@@ -1,6 +1,6 @@
 export type DomainRouteConfig = {
   campaign: string;
-  basePath?: string; // e.g., '/' (root), '/welcome', or default campaign path
+  renderFromRoot?: boolean;
   defaultStep?: string; // Optional custom starting step override
 };
 

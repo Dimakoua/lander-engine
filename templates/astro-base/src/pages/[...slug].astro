@@ -62,17 +62,9 @@ export async function getStaticPaths() {
       }
     }
 
-    // Find all basePaths assigned to this campaign
-    const basePaths = new Set<string>();
-    for (const [_, routeConfig] of Object.entries(domainRouting)) {
-      if (routeConfig.campaign === campaignId) {
-        basePaths.add(routeConfig.basePath || `/${campaignId}`);
-      }
-    }
-    // Default fallback if campaign isn't explicitly mapped
-    if (basePaths.size === 0) {
-      basePaths.add(`/${campaignId}`);
-    }
+    // Each campaign gets its own single basePath / campaignId segment
+    const bp = `/${campaignId}`;
+    const prefix = campaignId;
 
     /**
      * Build the resolved props for a single page path.
@@ -114,73 +106,68 @@ export async function getStaticPaths() {
       };
     }
 
-    for (const bp of basePaths) {
-      const prefix = bp === '/' ? '' : bp.replace(/^\//, '');
+    // Campaign root → server-redirect to initial step (variant assignment happens client-side)
+    const initialStepId = base.flow.initialStep;
+    if (base.steps[initialStepId]) {
+      const defaultProps = buildProps(initialStepId, false, null, hasMobile, bp);
+      paths.push({
+        params: { slug: prefix },
+        props: {
+          isRedirect: true,
+          redirectTo: `${bp}/${initialStepId}`,
+          campaignId,
+          config: defaultProps.config,
+          flow: defaultProps.flow,
+          variants: defaultProps.variants,
+          hasMobileRoute: defaultProps.hasMobileRoute,
+          basePath: bp,
+          domainRouting,
+        },
+      });
+    }
 
-      // Campaign root → server-redirect to initial step (variant assignment happens client-side)
-      const initialStepId = base.flow.initialStep;
-      if (base.steps[initialStepId]) {
-        const defaultProps = buildProps(initialStepId, false, null, hasMobile, bp);
+    for (const [stepId] of Object.entries(base.steps)) {
+      const stepType = base.flow.steps[stepId]?.type;
+      // Popup steps render as modals inside normal pages — no dedicated routes
+      if (stepType === 'popup') continue;
+
+      const makeSlug = (suffix: string) => {
+        return `${prefix}/${stepId}${suffix}`;
+      };
+
+      // 1. Base desktop
+      paths.push({
+        params: { slug: makeSlug('') },
+        props: buildProps(stepId, false, null, hasMobile, bp),
+      });
+
+      // 2. Base mobile (only if a mobile/ directory exists)
+      if (hasMobile) {
         paths.push({
-          params: { slug: prefix === '' ? undefined : prefix },
-          props: {
-            isRedirect: true,
-            redirectTo: bp === '/' ? `/${initialStepId}` : `${bp}/${initialStepId}`,
-            campaignId,
-            config: defaultProps.config,
-            flow: defaultProps.flow,
-            variants: defaultProps.variants,
-            hasMobileRoute: defaultProps.hasMobileRoute,
-            basePath: bp,
-            domainRouting,
-          },
+          params: { slug: makeSlug('.mobile') },
+          props: buildProps(stepId, true, null, hasMobile, bp),
         });
       }
 
-      for (const [stepId] of Object.entries(base.steps)) {
-        const stepType = base.flow.steps[stepId]?.type;
-        // Popup steps render as modals inside normal pages — no dedicated routes
-        if (stepType === 'popup') continue;
+      // 3. Variant routes
+      for (const variant of variants) {
+        const vmo = variantMobileOverridesMap[variant];
+        // Generate a variant mobile route when the campaign has base mobile overrides
+        // OR when this variant has its own mobile overrides.
+        const hasVariantMobile = hasMobile || Object.keys(vmo).length > 0;
 
-        const makeSlug = (suffix: string) => {
-          const p = prefix ? `${prefix}/${stepId}${suffix}` : `${stepId}${suffix}`;
-          return p === '' ? undefined : p;
-        };
-
-        // 1. Base desktop
+        // Variant desktop
         paths.push({
-          params: { slug: makeSlug('') },
-          props: buildProps(stepId, false, null, hasMobile, bp),
+          params: { slug: makeSlug(`.${variant}`) },
+          props: buildProps(stepId, false, variant, hasVariantMobile, bp),
         });
 
-        // 2. Base mobile (only if a mobile/ directory exists)
-        if (hasMobile) {
+        // Variant mobile
+        if (hasVariantMobile) {
           paths.push({
-            params: { slug: makeSlug('.mobile') },
-            props: buildProps(stepId, true, null, hasMobile, bp),
+            params: { slug: makeSlug(`.${variant}.mobile`) },
+            props: buildProps(stepId, true, variant, hasVariantMobile, bp),
           });
-        }
-
-        // 3. Variant routes
-        for (const variant of variants) {
-          const vmo = variantMobileOverridesMap[variant];
-          // Generate a variant mobile route when the campaign has base mobile overrides
-          // OR when this variant has its own mobile overrides.
-          const hasVariantMobile = hasMobile || Object.keys(vmo).length > 0;
-
-          // Variant desktop
-          paths.push({
-            params: { slug: makeSlug(`.${variant}`) },
-            props: buildProps(stepId, false, variant, hasVariantMobile, bp),
-          });
-
-          // Variant mobile
-          if (hasVariantMobile) {
-            paths.push({
-              params: { slug: makeSlug(`.${variant}.mobile`) },
-              props: buildProps(stepId, true, variant, hasVariantMobile, bp),
-            });
-          }
         }
       }
     }
@@ -422,7 +409,6 @@ const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
         // Populate resolved URL function using the library modules
         window.__landerResolveUrl = (pathname: string): string | null => {
           const pathParts = pathname.replace(/\/$/, '').split('/').filter(Boolean);
-          if (pathParts.length === 0) return null;
 
           // Find current campaign id
           let cId = '';
@@ -452,6 +438,20 @@ const bodyEndScripts = scripts.filter((s: any) => s.position === 'body-end');
           // Sticky variant lookup or assignment
           const activeVariant = assignVariant(cId, config.variants);
           const isMobile = detectMobile();
+
+          if (pathParts.length === 0) {
+            let defaultStep = 'main';
+            if (window.__landerDomainRouting) {
+              const hostname = window.location.hostname;
+              const hostMapping = window.__landerDomainRouting[hostname];
+              if (hostMapping && hostMapping.campaign === cId) {
+                defaultStep = hostMapping.defaultStep || 'main';
+              }
+            }
+            const rawUrl = `${currentBasePath}/${defaultStep}`;
+            const resolved = resolveUrl(rawUrl, cId, currentBasePath, config, isMobile, activeVariant);
+            return resolved;
+          }
 
           return resolveUrl(pathname, cId, currentBasePath, config, isMobile, activeVariant);
         };
